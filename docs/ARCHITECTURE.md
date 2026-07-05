@@ -17,6 +17,15 @@
 - **Sparse data is the norm:** most top-ladder players have zero public replays and many play on alts. "No replays" is a recorded outcome, not an error.
 - **Regulations rotate** (~Sept 2026 → Reg M-C): format ID/mechanics/display name live in the `formats` table, one row per regulation; every data table keys on format ID.
 
+## Production ops (deployed 2026-07-05)
+
+- **URLs/IDs:** app https://champscope.vercel.app · Vercel project `champscope` (auto-deploys `main` from GitHub `ziangit/Champscope`) · Supabase project ref `amyilzbouobunoegefld`.
+- **Secrets:** `CRON_SECRET` lives in Vercel env (production) and as a GitHub Actions secret — recover via `npx vercel env pull`; it is NOT in `.env.local` (that file holds the local-stack values, `CRON_SECRET=local-test-secret`). Rotation = new value in both places + redeploy.
+- **Schema changes:** apply to prod with the Supabase management API — `POST https://api.supabase.com/v1/projects/<ref>/database/query` with `{query: <sql>}`, bearer = the CLI access token (on macOS it's in the keychain: `security find-generic-password -s "Supabase CLI" -w`; requires `supabase login` once). `schema.sql` is idempotent, so re-running the whole file is the normal path. The service_role grants block in schema.sql is required whenever tables are created outside Supabase's own editor.
+- **Scheduler:** GH Actions `ladder-watch` fires at 00:00/12:00 UTC, loops the worker route until `finished`/`cooldown` (~3.5 min, ~35 ticks/pass). Manual pass: `gh workflow run ladder-watch`, or curl the route with the bearer token. Pass cooldown is 11 h (`lib/watch.ts`). Vercel Cron (once daily, `vercel.json`) is the fallback; it authenticates automatically with the `CRON_SECRET` env var.
+- **Cursor resume is cross-trigger:** a pass started manually is picked up and finished by the workflow (verified on the first prod pass).
+- **Local vs prod:** two independent DBs. Local = `supabase start` + `.env.local`; prod data only via the deployed app/workflow. `npm run reparse` runs against whatever `.env.local` points to — point it at prod only deliberately.
+
 ## Key decisions
 - **Cache-first:** cron ingests into Postgres; UI reads Postgres; ad-hoc scouts write through the same queue + cache. Replay JSON immutable — never refetched.
 - **Pure core parser** (`lib/scout/`): no I/O, snapshot-tested against real replay fixtures in `test/fixtures/`. Highest-value test surface in the project.

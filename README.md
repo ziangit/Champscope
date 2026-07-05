@@ -2,7 +2,9 @@
 
 VGC-first Pokémon Showdown scouting suite for the Pokémon Champions era: a replay scouter web app plus a scheduled ladder watcher that builds a persistent team database. Unaffiliated, non-commercial fan project — no Pokémon assets are bundled; sprites are hotlinked from the official Showdown client.
 
-Spec: [CHAMPSCOPE.md](CHAMPSCOPE.md) · Architecture notes & gotchas: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+**Live:** https://champscope.vercel.app
+
+Spec: [CHAMPSCOPE.md](CHAMPSCOPE.md) · Architecture notes, gotchas & production ops: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Planned team sources: [docs/TEAM-SOURCES.md](docs/TEAM-SOURCES.md)
 
 ## Setup
 
