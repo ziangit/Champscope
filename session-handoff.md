@@ -1,7 +1,8 @@
 # Session handoff
 
-**Current phase:** Build steps 1–7 complete and verified end-to-end against a local Supabase stack (`supabase start`; .env.local points at it). A real scout and a full 21-tick top-50 watch pass ran clean: 207 replays cached, 259 team profiles, 22/50 coverage, cooldown no-ops.
-**Next concrete step:** Deploy: create the Supabase project and apply `schema.sql`; create the Vercel project with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SHOWDOWN_CONTACT`; push to GitHub and set the `CRON_SECRET` secret + `WATCH_URL` variable for `.github/workflows/watch.yml`. Then run one ad-hoc scout end-to-end against production and watch the first ladder pass complete.
+**Current phase:** DEPLOYED. Production: https://champscope.vercel.app (Vercel project `champscope`, GitHub `ziangit/Champscope`, Supabase project `amyilzbouobunoegefld`). Schema applied via management API; env vars set (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SHOWDOWN_CONTACT`); GH secret `CRON_SECRET` + variable `WATCH_URL` set; `ladder-watch` enabled (fires every 12 h, drives a full pass per run). Local dev stack (`supabase start` + `.env.local`) still works independently of prod.
+**Next concrete step:** Implement docs/TEAM-SOURCES.md — the set importer, then pokedata.ovh / VGCPastes / teamsheet.gg / Smogon-chaos ingest jobs, then `/match`.
+**Previously:** Deploy checklist was: create the Supabase project and apply `schema.sql`; create the Vercel project with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SHOWDOWN_CONTACT`; push to GitHub and set the `CRON_SECRET` secret + `WATCH_URL` variable for `.github/workflows/watch.yml`. Then run one ad-hoc scout end-to-end against production and watch the first ladder pass complete.
 
 ## Done so far
 - Harness docs (AGENTS.md holds the content; CLAUDE.md imports it per the Next.js scaffold convention).
