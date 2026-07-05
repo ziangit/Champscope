@@ -16,6 +16,7 @@ describe("exportMon", () => {
     const profile = mergeGame(newTeamProfile(player, parsed.formatId), player, {
       replayId: parsed.replayId,
       uploadTime: parsed.uploadTime,
+      rating: parsed.rating,
       tie: parsed.tie,
     });
 
@@ -25,5 +26,30 @@ describe("exportMon", () => {
 
     // A mon with zero reveals exports as just its species line.
     expect(exportMon(profile.mons.venusaur)).toBe("Venusaur");
+  });
+
+  it("caps the export at the 4 most-used moves so it round-trips the teambuilder", () => {
+    const mon = {
+      speciesId: "pikachu",
+      species: "Pikachu",
+      nicknames: [],
+      moves: {
+        thunderbolt: { name: "Thunderbolt", count: 5, source: "revealed" as const },
+        protect: { name: "Protect", count: 4, source: "revealed" as const },
+        fakeout: { name: "Fake Out", count: 3, source: "revealed" as const },
+        volttackle: { name: "Volt Tackle", count: 2, source: "revealed" as const },
+        grassknot: { name: "Grass Knot", count: 1, source: "revealed" as const },
+      },
+      items: {},
+      abilities: {},
+      teraTypes: {},
+      megaFormes: {},
+      setVariation: true,
+      timesBrought: 0,
+      timesLead: 0,
+    };
+    expect(exportMon(mon)).toBe(
+      ["Pikachu", "- Thunderbolt", "- Protect", "- Fake Out", "- Volt Tackle"].join("\n"),
+    );
   });
 });

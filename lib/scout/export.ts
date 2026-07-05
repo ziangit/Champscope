@@ -35,9 +35,10 @@ export function exportMon(mon: MergedMon): string {
     const ivs = statsLine(mon.ivs, 31);
     if (ivs) lines.push(`IVs: ${ivs}`);
   }
-  // Most-used first; a 5th+ move is a set variation, kept visible.
+  // Most-used first, capped at 4 so the export round-trips the teambuilder
+  // import. Set variations (5th+ distinct move) stay visible in the UI.
   const moves = Object.values(mon.moves).sort((a, b) => b.count - a.count);
-  for (const move of moves) lines.push(`- ${move.name}`);
+  for (const move of moves.slice(0, 4)) lines.push(`- ${move.name}`);
   return lines.join("\n");
 }
 

@@ -77,7 +77,12 @@ async function rebuildProfiles(): Promise<number> {
         const key = `${player.userId}|${parsed.formatId}|${fresh.fingerprint}`;
         const profile = profiles.get(key) ?? fresh;
         profiles.set(key, profile);
-        mergeGame(profile, player, { replayId: parsed.replayId, uploadTime: parsed.uploadTime, tie: parsed.tie });
+        mergeGame(profile, player, {
+          replayId: parsed.replayId,
+          uploadTime: parsed.uploadTime,
+          rating: parsed.rating,
+          tie: parsed.tie,
+        });
       }
     }
   }
@@ -91,7 +96,7 @@ async function rebuildProfiles(): Promise<number> {
           format_id: p.formatId,
           fingerprint: p.fingerprint,
           roster: p.rosterIds,
-          merged_reveals: { mons: p.mons, megaSlot: p.megaSlot, replayIds: p.replayIds, ties: p.ties, displayName: p.displayName },
+          merged_reveals: { mons: p.mons, megaSlot: p.megaSlot, replays: p.replays, ties: p.ties, displayName: p.displayName },
           lead_pairs: p.leadPairs,
           brings: p.brings,
           wins: p.wins,

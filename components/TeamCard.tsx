@@ -14,41 +14,51 @@ function sourceMark(source: string) {
   return source === "sheet" ? "●" : "○";
 }
 
+/** One mon rendered Pokepaste-style: header line, Ability line, move lines. */
 function MonSummary({ mon }: { mon: MergedMon }) {
   const item = modal(mon.items);
   const ability = modal(mon.abilities);
   const moves = Object.values(mon.moves).sort((a, b) => b.count - a.count);
+  const set = moves.slice(0, 4);
+  // A player who changes sets leaves >4 distinct moves — the 4 most-used form
+  // the likely current set, the rest are kept visible below.
+  const alsoSeen = moves.slice(4);
   return (
-    <div className="flex gap-2 border-t border-line py-2 first:border-t-0">
+    <div className="flex gap-3 border-t border-line py-3 first:border-t-0">
       <img src={spriteUrl(mon.species)} alt={mon.species} width={48} height={48} className="h-12 w-12 shrink-0 [image-rendering:pixelated]" />
-      <div className="min-w-0 text-sm">
+      <div className="min-w-0 font-mono text-sm leading-6">
         <div className="font-semibold">
           {mon.species}
-          {mon.nicknames.length > 0 && <span className="ml-1 font-normal text-steel">“{mon.nicknames.join("”, “")}”</span>}
-          {mon.setVariation && (
+          {mon.nicknames.length > 0 && <span className="font-normal text-steel"> “{mon.nicknames.join("”, “")}”</span>}
+          {item && (
+            <span className="font-normal" title={`Item — ${item.source === "sheet" ? "from team sheet" : "revealed in battle"} (seen ${item.count}×)`}>
+              {" "}@ {item.name}
+              {Object.keys(mon.items).length > 1 && <span className="text-steel"> (+{Object.keys(mon.items).length - 1})</span>}
+            </span>
+          )}
+          {alsoSeen.length > 0 && (
             <span className="ml-2 rounded bg-accent/10 px-1 font-mono text-[10px] uppercase text-accent" title="More than 4 distinct moves seen — this player runs set variations">
               variants
             </span>
           )}
         </div>
-        <div className="text-steel">
-          {ability && (
-            <span title={`Ability — ${ability.source} (seen ${ability.count}×)`}>
-              {sourceMark(ability.source)} {ability.name}
-            </span>
-          )}
-          {item && (
-            <span className="ml-2" title={`Item — ${item.source} (seen ${item.count}×)`}>
-              @ {item.name}
-              {Object.keys(mon.items).length > 1 && ` (+${Object.keys(mon.items).length - 1})`}
-            </span>
-          )}
-        </div>
-        {moves.length > 0 && (
+        {ability && (
+          <div title={`Ability — ${ability.source === "sheet" ? "from team sheet" : "revealed in battle"} (seen ${ability.count}×)`}>
+            Ability: {ability.name} <span className="text-steel">{sourceMark(ability.source)}</span>
+          </div>
+        )}
+        {set.map((m) => (
+          <div key={m.name} title={`${m.source === "sheet" ? "From team sheet" : "Revealed in battle"} — seen ${m.count}×`}>
+            - {m.name} <span className="text-steel">{sourceMark(m.source)} {m.count}×</span>
+          </div>
+        ))}
+        {alsoSeen.length > 0 && (
           <div className="text-xs text-steel">
-            {moves.map((m) => (
-              <span key={m.name} className="mr-2" title={`${m.source === "sheet" ? "From team sheet" : "Revealed in battle"} — seen ${m.count}×`}>
-                {sourceMark(m.source)} {m.name}
+            also seen:{" "}
+            {alsoSeen.map((m, i) => (
+              <span key={m.name} title={`${m.source === "sheet" ? "From team sheet" : "Revealed in battle"} — seen ${m.count}×`}>
+                {i > 0 && ", "}
+                {m.name} {m.count}×
               </span>
             ))}
           </div>
@@ -141,13 +151,25 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
 
           <div>
             <h3 className="font-display font-semibold uppercase tracking-wide text-steel">Replays</h3>
-            <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 font-mono text-xs">
-              {m.replayIds.map((id) => (
-                <a key={id} href={replayUrl(id)} target="_blank" rel="noreferrer" className="text-steel underline hover:text-ink">
-                  {id.split("-").pop()}
-                </a>
-              ))}
-            </p>
+            <table className="mt-1 w-full font-mono text-xs">
+              <tbody>
+                {[...m.replays]
+                  .sort((a, b) => b.uploadTime - a.uploadTime)
+                  .map((r) => (
+                    <tr key={r.id} className="border-t border-line first:border-t-0">
+                      <td className="py-0.5">
+                        <a href={replayUrl(r.id)} target="_blank" rel="noreferrer" className="text-steel underline hover:text-ink">
+                          {r.id.split("-").pop()}
+                        </a>
+                      </td>
+                      <td className="py-0.5 text-right text-steel">{new Date(r.uploadTime * 1000).toISOString().slice(0, 10)}</td>
+                      <td className="w-24 py-0.5 text-right" title={r.rating === null ? "Unrated game" : "Ladder rating when the replay was saved"}>
+                        {r.rating === null ? <span className="text-steel">unrated</span> : `Rating: ${r.rating}`}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
 
           <p className="text-xs text-steel">● from open team sheet &nbsp; ○ revealed in battle</p>

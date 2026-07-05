@@ -66,7 +66,7 @@ function profileRow(p: TeamProfile) {
     merged_reveals: {
       mons: p.mons,
       megaSlot: p.megaSlot,
-      replayIds: p.replayIds,
+      replays: p.replays,
       ties: p.ties,
       displayName: p.displayName,
     },
@@ -85,7 +85,7 @@ function profileFromRow(row: Record<string, unknown>, base: TeamProfile): TeamPr
     ...base,
     mons: merged.mons ?? {},
     megaSlot: merged.megaSlot ?? {},
-    replayIds: merged.replayIds ?? [],
+    replays: merged.replays ?? [],
     ties: merged.ties ?? 0,
     leadPairs: (row.lead_pairs as TeamProfile["leadPairs"]) ?? {},
     brings: (row.brings as TeamProfile["brings"]) ?? {},
@@ -112,7 +112,12 @@ async function mergeIntoProfiles(parsed: ParsedReplay, stats: ScoutStats) {
 
     const profile = data ? profileFromRow(data, fresh) : fresh;
     if (!data) stats.newTeams += 1;
-    mergeGame(profile, player, { replayId: parsed.replayId, uploadTime: parsed.uploadTime, tie: parsed.tie });
+    mergeGame(profile, player, {
+      replayId: parsed.replayId,
+      uploadTime: parsed.uploadTime,
+      rating: parsed.rating,
+      tie: parsed.tie,
+    });
 
     const { error: upErr } = await db()
       .from("team_profiles")

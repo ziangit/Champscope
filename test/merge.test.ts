@@ -50,7 +50,7 @@ function fixturePlayer(id: string, playerIndex: 0 | 1) {
 describe("mergeGame", () => {
   it("accumulates a profile from a real replay and is idempotent per replay", () => {
     const { parsed, player } = fixturePlayer("gen9championsvgc2026regmb-2644523805", 0);
-    const ctx = { replayId: parsed.replayId, uploadTime: parsed.uploadTime, tie: parsed.tie };
+    const ctx = { replayId: parsed.replayId, uploadTime: parsed.uploadTime, rating: parsed.rating, tie: parsed.tie };
     const profile = mergeGame(newTeamProfile(player, parsed.formatId), player, ctx);
 
     expect(profile.userId).toBe("quinncs");
@@ -61,11 +61,15 @@ describe("mergeGame", () => {
     expect(profile.brings).toEqual({ "excadrill+rotomwash+staraptor+tyranitar": 1 });
     expect(profile.megaSlot).toEqual({ staraptor: 1 });
     expect(profile.mons.staraptor.items.staraptite.name).toBe("Staraptite");
+    // The source replay is kept with its ladder rating.
+    expect(profile.replays).toEqual([
+      { id: parsed.replayId, uploadTime: parsed.uploadTime, rating: 1327 },
+    ]);
 
     // Merging the same replay again changes nothing.
     const again = mergeGame(profile, player, ctx);
     expect(again.wins).toBe(1);
-    expect(again.replayIds).toHaveLength(1);
+    expect(again.replays).toHaveLength(1);
   });
 
   it("counts frequencies across games and flags 5th-move set variations", () => {
@@ -86,7 +90,7 @@ describe("mergeGame", () => {
       won: true,
     };
     const profile = newTeamProfile(base, "testformat");
-    mergeGame(profile, base, { replayId: "r1", uploadTime: 100, tie: false });
+    mergeGame(profile, base, { replayId: "r1", uploadTime: 100, rating: null, tie: false });
     mergeGame(
       profile,
       {
@@ -100,12 +104,12 @@ describe("mergeGame", () => {
           },
         ],
       },
-      { replayId: "r2", uploadTime: 200, tie: false },
+      { replayId: "r2", uploadTime: 200, rating: null, tie: false },
     );
     mergeGame(
       profile,
       { ...base, roster: [{ ...base.roster[0], moves: ["Grass Knot"] }] },
-      { replayId: "r3", uploadTime: 300, tie: true },
+      { replayId: "r3", uploadTime: 300, rating: null, tie: true },
     );
 
     const pika = profile.mons.pikachu;

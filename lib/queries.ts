@@ -28,7 +28,7 @@ export interface TeamProfileRow {
   merged_reveals: {
     mons: TeamProfile["mons"];
     megaSlot: Record<string, number>;
-    replayIds: string[];
+    replays: TeamProfile["replays"];
     ties: number;
     displayName: string;
   };

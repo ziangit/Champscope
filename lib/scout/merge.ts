@@ -29,6 +29,13 @@ export interface MergedMon {
   timesLead: number;
 }
 
+/** Pointer to a source replay, with the game's ladder rating when rated. */
+export interface ReplayRef {
+  id: string;
+  uploadTime: number;
+  rating: number | null;
+}
+
 export interface TeamProfile {
   userId: string;
   displayName: string;
@@ -43,7 +50,7 @@ export interface TeamProfile {
   losses: number;
   ties: number;
   megaSlot: Record<string, number>; // base-forme id -> games it held the Mega
-  replayIds: string[];
+  replays: ReplayRef[];
   firstSeen: number; // uploadTime unix seconds
   lastSeen: number;
 }
@@ -51,6 +58,7 @@ export interface TeamProfile {
 export interface ReplayContext {
   replayId: string;
   uploadTime: number;
+  rating: number | null;
   tie: boolean;
 }
 
@@ -99,7 +107,7 @@ export function newTeamProfile(player: ParsedPlayer, formatId: string): TeamProf
     losses: 0,
     ties: 0,
     megaSlot: {},
-    replayIds: [],
+    replays: [],
     firstSeen: Number.MAX_SAFE_INTEGER,
     lastSeen: 0,
   };
@@ -110,8 +118,8 @@ export function newTeamProfile(player: ParsedPlayer, formatId: string): TeamProf
  * the same replay twice is a no-op. Mutates and returns `profile`.
  */
 export function mergeGame(profile: TeamProfile, player: ParsedPlayer, replay: ReplayContext, tie = false): TeamProfile {
-  if (profile.replayIds.includes(replay.replayId)) return profile;
-  profile.replayIds.push(replay.replayId);
+  if (profile.replays.some((r) => r.id === replay.replayId)) return profile;
+  profile.replays.push({ id: replay.replayId, uploadTime: replay.uploadTime, rating: replay.rating });
   profile.firstSeen = Math.min(profile.firstSeen, replay.uploadTime);
   profile.lastSeen = Math.max(profile.lastSeen, replay.uploadTime);
   profile.displayName = player.name;
