@@ -71,6 +71,13 @@ create table if not exists scout_runs (
 );
 create index if not exists scout_runs_format_idx on scout_runs (format_id, started_at desc);
 
+-- The app connects as service_role through PostgREST; make sure it can reach
+-- these tables regardless of how this file was applied (SQL editor vs psql).
+grant usage on schema public to service_role;
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+alter default privileges in schema public grant all on tables to service_role;
+
 -- Seed the verified Champions formats (idempotent; display names/mechanics from
 -- play.pokemonshowdown.com/data/formats.js, verified 2026-07-05).
 insert into formats (id, display_name, mechanics, active) values
