@@ -1,6 +1,6 @@
 # Session handoff
 
-**Current phase:** Build steps 1–7 complete (all of CHAMPSCOPE.md §8) — code is done and tested locally; the project has never been deployed.
+**Current phase:** Build steps 1–7 complete and verified end-to-end against a local Supabase stack (`supabase start`; .env.local points at it). A real scout and a full 21-tick top-50 watch pass ran clean: 207 replays cached, 259 team profiles, 22/50 coverage, cooldown no-ops.
 **Next concrete step:** Deploy: create the Supabase project and apply `schema.sql`; create the Vercel project with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SHOWDOWN_CONTACT`; push to GitHub and set the `CRON_SECRET` secret + `WATCH_URL` variable for `.github/workflows/watch.yml`. Then run one ad-hoc scout end-to-end against production and watch the first ladder pass complete.
 
 ## Done so far
