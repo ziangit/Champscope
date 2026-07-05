@@ -13,7 +13,7 @@ Spec: [CHAMPSCOPE.md](CHAMPSCOPE.md) · Architecture notes & gotchas: [docs/ARCH
 ## Deploy
 
 - Vercel project with the same env vars (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SHOWDOWN_CONTACT`). `vercel.json` registers the once-daily fallback cron.
-- GitHub repo: add secret `CRON_SECRET` and variable `WATCH_URL` (`https://<app>.vercel.app/api/watch/run`) for [`.github/workflows/watch.yml`](.github/workflows/watch.yml), which drives the chunked watcher every 10 minutes (each hit does ~7 s of work and persists a cursor; finished passes cool down for 20 h).
+- GitHub repo: add secret `CRON_SECRET` and variable `WATCH_URL` (`https://<app>.vercel.app/api/watch/run`) for [`.github/workflows/watch.yml`](.github/workflows/watch.yml), which fires every 12 hours and drives the chunked watcher until the pass completes (each hit does ~7 s of work and persists a cursor; passes cool down for 11 h).
 
 ## Commands
 

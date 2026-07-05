@@ -1,8 +1,7 @@
-# External scheduler for the ladder watcher: Vercel Hobby cron is once-daily,
-# so GitHub Actions drives the chunked worker route often enough for a full
-# top-50 pass to complete within a couple of hours. Each hit processes ~7 s
-# of work and persists a cursor; once the daily pass finishes, further hits
-# are cheap no-ops (cooldown).
+# Scheduler for the ladder watcher: fires every 12 hours and drives the
+# chunked worker route until the pass completes. Each hit does ~7 s of work
+# within Vercel Hobby's 10 s limit and persists a cursor; a full top-50 pass
+# is ~20-40 hits. Vercel Cron (vercel.json) stays as a once-daily fallback.
 #
 # Repo setup:
 #   Secret  CRON_SECRET — same value as the Vercel env var
@@ -10,15 +9,23 @@
 name: ladder-watch
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "0 */12 * * *"
   workflow_dispatch: {}
 
 jobs:
-  tick:
+  pass:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: Hit the watch worker
+      - name: Drive the watch pass to completion
         run: |
-          curl --fail-with-body -sS \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ vars.WATCH_URL }}?trigger=gh"
+          for i in $(seq 1 120); do
+            out=$(curl --fail-with-body -sS \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              "${{ vars.WATCH_URL }}?trigger=gh")
+            echo "tick $i: $out"
+            case "$out" in
+              *'"status":"finished"'*|*'"status":"cooldown"'*|*'"status":"noop"'*) break ;;
+            esac
+            sleep 3
+          done

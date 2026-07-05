@@ -14,6 +14,9 @@
 - `npm run reparse` (`scripts/reparse.ts`): re-parses cached `raw_json` on `PARSER_VERSION` bump and rebuilds all team profiles from scratch.
 - Tests: 17 passing (`npm test`); `next build` clean.
 
+## Planned next (after deploy)
+- Team-source ingestion + /match feature — full verified research and design in docs/TEAM-SOURCES.md (pokedata.ovh official sheets, VGCPastes, teamsheet.gg, Smogon chaos; X explicitly excluded).
+
 ## Open questions
 - All §10 spec questions answered — see docs/ARCHITECTURE.md (notably: **no `|showteam|` in Champions replays** despite the ruleset listing Open Team Sheets; reveal-driven provenance is the norm).
 - Undecided: backfill Reg M-A history (format exists, currently seeded `active=false`).

@@ -11,8 +11,9 @@ import { ingestReplay, type ScoutStats } from "./scout/ingest";
  */
 
 const TOP_N = 50;
-/** Don't start a fresh pass if the last one finished less than this ago. */
-const PASS_COOLDOWN_MS = 20 * 60 * 60 * 1000;
+/** Don't start a fresh pass if the last one started less than this ago.
+ * The scheduler fires every 12 h; 11 h lets each firing start a new pass. */
+const PASS_COOLDOWN_MS = 11 * 60 * 60 * 1000;
 
 interface WatchCursor {
   players: string[]; // top-50 userIds for this pass
