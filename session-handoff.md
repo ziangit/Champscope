@@ -1,13 +1,20 @@
 # Session handoff
 
-**Current phase:** Build step 1 — bootstrap repo (harness docs, Next.js scaffold, `schema.sql`, `vercel.json`, env wiring)
-**Next concrete step:** Scaffold the Next.js + TypeScript app, then build the shared Showdown client (`toID()`, rate-limited queue, typed endpoint wrappers) and verify the live Champions format ID.
+**Current phase:** Build steps 1–7 complete (all of CHAMPSCOPE.md §8) — code is done and tested locally; the project has never been deployed.
+**Next concrete step:** Deploy: create the Supabase project and apply `schema.sql`; create the Vercel project with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SHOWDOWN_CONTACT`; push to GitHub and set the `CRON_SECRET` secret + `WATCH_URL` variable for `.github/workflows/watch.yml`. Then run one ad-hoc scout end-to-end against production and watch the first ladder pass complete.
 
 ## Done so far
-- Harness docs created (CLAUDE.md, docs/PRODUCT.md, docs/ARCHITECTURE.md, this file).
+- Harness docs (AGENTS.md holds the content; CLAUDE.md imports it per the Next.js scaffold convention).
+- Bootstrap: Next.js 16 App Router + TS + Tailwind v4, idempotent `schema.sql` (seeds verified formats), `vercel.json` daily cron fallback, `.env.example`.
+- Showdown client (`lib/showdown/`): `toID`, global polite serial queue (≥600 ms, 3-try backoff, honest UA), typed wrappers modeled from live responses. Format ID `gen9championsvgc2026regmb` verified live.
+- Parser (`lib/scout/parse.ts`): log → `ParsedReplay`; 5 real Reg M-B fixtures snapshot-tested + hand-checked; synthetic tests for tie/showteam/Trick/Trace/Metronome edge cases.
+- Merge layer (`lib/scout/merge.ts`, `formes.ts`): base-forme fingerprints, frequency-counted reveals with provenance, lead pairs / bring-4, set-variation flag, alt correlation.
+- Phase 1 UI: `/scout` (server action → shared ingest pipeline), `/player/[userId]`, `/teams`; team-sheet-styled cards, copyable Showdown export (confirmed fields only). Pages degrade to a setup notice without Supabase env.
+- Phase 2: `lib/watch.ts` chunked worker (cursor in `scout_runs.cursor`, ~7 s budget, 20 h pass cooldown), bearer-authed `/api/watch/run`, GH Actions scheduler (`.github/workflows/watch.yml`), `/watch` dashboard (run status, coverage, top-50 Δ table, new finds, alt suggestions).
+- `npm run reparse` (`scripts/reparse.ts`): re-parses cached `raw_json` on `PARSER_VERSION` bump and rebuilds all team profiles from scratch.
+- Tests: 17 passing (`npm test`); `next build` clean.
 
-## Open questions (record answers in docs/ARCHITECTURE.md as resolved)
-- Exact Champions format ID(s); is Reg M-A history worth backfilling alongside M-B?
-- Does `search.json` support combined `user+format` in one query, or is client-side filtering needed?
-- Do Champions ladder replays include `|showteam|` (open team sheets)?
-- Does ladder JSON expose Glicko/GXE fields (and their actual names) for the trajectory chart?
+## Open questions
+- All §10 spec questions answered — see docs/ARCHITECTURE.md (notably: **no `|showteam|` in Champions replays** despite the ruleset listing Open Team Sheets; reveal-driven provenance is the norm).
+- Undecided: backfill Reg M-A history (format exists, currently seeded `active=false`).
+- Nice-to-haves not built: rating-trajectory chart on /watch (currently a Δ column), Bo3 format variants in `formats`.
