@@ -125,6 +125,9 @@ existing `matchTeams`. Agreed design:
 - **Server-side validation is the real fallback**: every name goes through
   `toID` and is checked against known species; if < 4 valid species survive →
   "not recognized" regardless of what the model said (hallucination guard).
+  Note this guard alone is insufficient: Pokémon *artwork* can carry 6 valid
+  names (see `negative-starter-illustration.png`) — the model's layout
+  classification ("is this a team/battle screen?") is what must reject those.
 - Extraction pre-fills the editable species input — human corrects misread
   slots (sprite-ambiguous formes: Maushold count, Basculegion gender, Rotom
   appliances, Urshifu style) before/after matching. 4-of-6 tier absorbs 1–2

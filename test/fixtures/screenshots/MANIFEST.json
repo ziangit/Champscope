@@ -60,6 +60,13 @@
       "expectRecognized": true
     },
     {
+      "file": "negative-starter-illustration.png",
+      "kind": "negative",
+      "description": "Cute starter-Pokemon illustration (Rowlet/Litten/Popplio/Sprigatito/Fuecoco/Quaxly with name tags). HARD negative: 6 valid, readable species names but NOT a team/battle screen — species-count validation alone would wrongly pass it. The model's layout classification must return recognized:false (artwork, not a competitive team).",
+      "expectedSpecies": null,
+      "expectRecognized": false
+    },
+    {
       "file": "champions-battle-preview-vertical-ja.png",
       "kind": "champions-battle-preview",
       "language": "ja",
@@ -69,5 +76,5 @@
       "expectRecognized": true
     }
   ],
-  "negativeCasesTodo": "Add 2-3 unrelated screenshots (non-Pokemon game, desktop, photo) before the eval — they must return recognized:false."
+  "negativeCasesTodo": "One hard negative on file (Pokemon artwork with valid names). Still add 1-2 fully unrelated screenshots (non-Pokemon game, desktop) before the eval."
 }
