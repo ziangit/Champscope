@@ -110,3 +110,29 @@ When facing an opponent on ladder, look up their previewed team in the DB
   intersection per row.
 - Still future: an optional Tampermonkey userscript that reads team preview from
   the battle DOM and opens `/match` prefilled; Showdex-fork overlay stays Phase 3.
+
+## Screenshot matching (designed 2026-07-06, not yet implemented)
+
+Third input adapter for /match: a screenshot (Showdown preview, Champions
+mobile/Switch team screen or battle preview) → LLM vision → species[] → the
+existing `matchTeams`. Agreed design:
+
+- Client downscales to ~1024 px JPEG; `POST /api/match/screenshot`.
+- One vision call (Haiku-class, `ANTHROPIC_API_KEY` env) with **structured
+  output**: `{recognized, species: [{name, confidence}], layout}`. Prompt:
+  read the Pokémon, not the UI (Champions UI is post-cutoff); if the image is
+  not a Pokémon team screen return `recognized: false`.
+- **Server-side validation is the real fallback**: every name goes through
+  `toID` and is checked against known species; if < 4 valid species survive →
+  "not recognized" regardless of what the model said (hallucination guard).
+- Extraction pre-fills the editable species input — human corrects misread
+  slots (sprite-ambiguous formes: Maushold count, Basculegion gender, Rotom
+  appliances, Urshifu style) before/after matching. 4-of-6 tier absorbs 1–2
+  misreads anyway.
+- Screenshots feed the query side only — never stored into the team DB.
+- Open endpoint spends API money: add a minimal guard (shared secret in
+  localStorage or per-IP rate limit); still no real auth.
+- **Eval fixtures live in `test/fixtures/screenshots/`** (7 real screenshots +
+  MANIFEST.json with ground truth where text names the mons and unverified
+  candidates for sprite-only ones). Manual eval script once the API key is
+  available; add non-Pokémon negatives before evaluating.
