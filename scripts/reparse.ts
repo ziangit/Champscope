@@ -23,6 +23,7 @@ try {
 
 import { db } from "../lib/db";
 import { mergeGame, newTeamProfile, type TeamProfile } from "../lib/scout/merge";
+import { PROFILE_CONFLICT_KEY, profileRow } from "../lib/scout/rows";
 import { parseReplay } from "../lib/scout/parse";
 import { PARSER_VERSION, type ParsedReplay } from "../lib/scout/types";
 import type { ReplayJSON } from "../lib/showdown/types";
@@ -55,7 +56,9 @@ async function reparseOutdated(): Promise<number> {
 }
 
 async function rebuildProfiles(): Promise<number> {
-  const { error: delErr } = await db().from("team_profiles").delete().neq("fingerprint", "");
+  // Replay-derived rows only: imported teams (origin paste/tournament) are not
+  // derived from cached replays and must survive a rebuild.
+  const { error: delErr } = await db().from("team_profiles").delete().eq("origin", "replay");
   if (delErr) throw new Error(`team_profiles wipe failed: ${delErr.message}`);
 
   const profiles = new Map<string, TeamProfile>();
@@ -90,22 +93,7 @@ async function rebuildProfiles(): Promise<number> {
   for (const p of profiles.values()) {
     const { error } = await db()
       .from("team_profiles")
-      .upsert(
-        {
-          user_id: p.userId,
-          format_id: p.formatId,
-          fingerprint: p.fingerprint,
-          roster: p.rosterIds,
-          merged_reveals: { mons: p.mons, megaSlot: p.megaSlot, replays: p.replays, ties: p.ties, displayName: p.displayName },
-          lead_pairs: p.leadPairs,
-          brings: p.brings,
-          wins: p.wins,
-          losses: p.losses,
-          first_seen: new Date(p.firstSeen * 1000).toISOString(),
-          last_seen: new Date(p.lastSeen * 1000).toISOString(),
-        },
-        { onConflict: "user_id,format_id,fingerprint" },
-      );
+      .upsert(profileRow(p, "replay"), { onConflict: PROFILE_CONFLICT_KEY });
     if (error) throw new Error(`profile upsert failed: ${error.message}`);
   }
   return profiles.size;

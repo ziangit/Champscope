@@ -1,26 +1,41 @@
-# Team sources — verified, planned for future implementation
+# Team sources — verified; foundation + sources 1–2 + /match IMPLEMENTED 2026-07-06
 
 > Research verified live on 2026-07-05. Every endpoint below was actually fetched
 > and its response shape inspected. Decision: X/Twitter is NOT used (API paywalled;
 > VGCPastes mirrors the teams that matter anyway).
+>
+> **Status:** the shared foundation, VGCPastes, pokedata.ovh, and /match shipped
+> 2026-07-06 (`lib/scout/import.ts`, `lib/sources/`, `lib/match.ts`,
+> `/api/ingest/run` + `.github/workflows/ingest.yml` weekly). teamsheet.gg (§3)
+> and Smogon chaos (§4) remain future work.
 
-## The shared foundation (build first)
+## The shared foundation (IMPLEMENTED)
 
-One **set importer** that parses Showdown export text (the inverse of
-`lib/scout/export.ts`) and files teams into the existing fingerprint space:
+One **set importer** (`lib/scout/import.ts`) that parses Showdown export text
+(the inverse of `lib/scout/export.ts`) and files teams into the existing
+fingerprint space:
 
-- `team_profiles.origin: 'replay' | 'paste' | 'tournament'` (new column; existing rows = 'replay')
-- source metadata per imported team: source URL, creator/player, event, placing,
-  record, rental code, date shared
+- `team_profiles.origin: 'replay' | 'paste' | 'tournament'`; origin is part of
+  the row identity `(user_id, format_id, fingerprint, origin)` so imported
+  teams never contaminate replay-derived stats and `reparse` (which rebuilds
+  only `origin='replay'`) can't destroy them.
+- `team_profiles.sources jsonb` — per-team source metadata (`TeamSourceRef`:
+  key, url, link, event, placing, record, rental code, creator, sharedAt).
+  **The `key` is the dedupe identity**: every ingest is idempotent per key
+  (paste URL / `pokedata:{rk9link}:{userId}`), checked against a GIN index.
 - provenance: imported sets are sheet-grade (`source: 'sheet'`); EVs/nature only
   when the source provides them — never fabricated
-- species-name normalization on top of `toID` (pokedata uses e.g. `"Basculegion [Male]"`)
+- species-name normalization on top of `toID` (`normalizePokedataSpecies`;
+  bracket vocabulary collected from real responses, e.g. `"Basculegion [Male]"`,
+  `"Tauros [Paldean Form - Aqua Breed]"`)
 
-All sources funnel through it. Ingest jobs share the polite queue + cache rules.
+All sources funnel through it. Ingest jobs share the per-host polite queue
+(Showdown keeps its own single global lane) and run as a chunked cursor-resumable
+worker (`/api/ingest/run`, weekly GH Actions `team-ingest`, 20 h pass cooldown).
 
 ## Sources, in quality order
 
-### 1. pokedata.ovh — official tournament team sheets (JSON API)
+### 1. pokedata.ovh — official tournament team sheets (JSON API) — IMPLEMENTED
 
 Machine-readable mirror of RK9's officially published open team sheets, with results.
 
@@ -32,8 +47,17 @@ Machine-readable mirror of RK9's officially published open team sheets, with res
 - NAIC 2026 verified: 1,096 masters sheets, champion first.
 - No EVs (official OTS omit them). Nature = `stat_alignment`, moves = `badges`.
 - Unknown endpoints return `{}` (not 404) — probe carefully.
+- **Regulation mapping (implemented in `lib/sources/config.ts`):** tournaments
+  map to a format by date window. Grounded finding: the VGCPastes M-B tab's
+  earliest entry is 17 Jun 2026, so every finished official event through NAIC
+  (Jun 12–14) is **Reg M-A**, not M-B. The configured M-B window
+  (`since 2026-06-15`) is empty today — Worlds 2026 and later M-B events ingest
+  automatically. Backfilling M-A = one more window entry (still undecided).
+- Masters division only; players without a published decklist are skipped;
+  ingest is bulk-batched (100 sheets per 3 DB round-trips) so a 1,000-sheet
+  event takes a handful of worker ticks.
 
-### 2. VGCPastes repository — curated community teams with full EVs
+### 2. VGCPastes repository — curated community teams with full EVs — IMPLEMENTED
 
 - Google Sheet, one tab per regulation. Champions M-B tab (gid `1458357160`) of
   sheet `1axlwmzPA49rYkqXh7zHvAtSP-TKbM0ijGYBPRflLSWw`.
@@ -72,15 +96,17 @@ Machine-readable mirror of RK9's officially published open team sheets, with res
 - Documented public API (no key for most endpoints): https://docs.limitlesstcg.com/developer.html
 - Different pool from official majors; add after 1–4.
 
-## Also planned: live team matching (/match)
+## Live team matching (/match) — IMPLEMENTED
 
-When facing an opponent on ladder, look up their previewed team in the DB:
+When facing an opponent on ladder, look up their previewed team in the DB
+(`lib/match.ts`, `/match` page, `GET /api/match?format=&species=`):
 
 - **Exact 6/6**: normalize via `baseFormeId` → `teamFingerprint` → unique-index
   lookup. An exact hit under a different username doubles as an alt suggestion.
-- **Partial 4–5/6**: single overlap query — GIN index on `team_profiles.roster`,
-  prefilter `roster ?| $species`, count intersection in SQL, `ORDER BY overlap
-  DESC, last_seen DESC`, keep overlap ≥ 4.
-- Delivery tiers: `/match` page + `GET /api/match?format=&species=` JSON route
-  first; then an optional Tampermonkey userscript that reads team preview from
+- **Partial 4–5/6**: single overlap query — the `match_teams(format, species[])`
+  SQL function (schema.sql): GIN index on `team_profiles.roster`, prefilter
+  `roster ?| $species`, count intersection in SQL, `ORDER BY overlap DESC,
+  last_seen DESC`, keep overlap ≥ 4. O(candidates) with a constant 6×6
+  intersection per row.
+- Still future: an optional Tampermonkey userscript that reads team preview from
   the battle DOM and opens `/match` prefilled; Showdex-fork overlay stays Phase 3.

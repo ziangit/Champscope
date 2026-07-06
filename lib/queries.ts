@@ -1,5 +1,5 @@
 import { db } from "./db";
-import type { TeamProfile } from "./scout/merge";
+import type { TeamProfile, TeamSourceRef } from "./scout/merge";
 
 /** Env present? Pages degrade to a setup notice instead of crashing. */
 export function dbConfigured(): boolean {
@@ -19,11 +19,15 @@ export async function listFormats(): Promise<FormatRow[]> {
   return data ?? [];
 }
 
+export type TeamOrigin = "replay" | "paste" | "tournament";
+
 export interface TeamProfileRow {
   id: string;
   user_id: string;
   format_id: string;
   fingerprint: string;
+  origin: TeamOrigin;
+  sources: TeamSourceRef[];
   roster: string[];
   merged_reveals: {
     mons: TeamProfile["mons"];
@@ -48,10 +52,11 @@ export async function teamsForPlayer(userId: string, formatId?: string): Promise
   return data ?? [];
 }
 
-export async function browseTeams(opts: { formatId?: string; species?: string; limit?: number }): Promise<TeamProfileRow[]> {
+export async function browseTeams(opts: { formatId?: string; species?: string; origin?: TeamOrigin; limit?: number }): Promise<TeamProfileRow[]> {
   let q = db().from("team_profiles").select("*").order("last_seen", { ascending: false }).limit(opts.limit ?? 200);
   if (opts.formatId) q = q.eq("format_id", opts.formatId);
   if (opts.species) q = q.contains("roster", [opts.species]);
+  if (opts.origin) q = q.eq("origin", opts.origin);
   const { data, error } = await q;
   if (error) throw new Error(`team_profiles browse failed: ${error.message}`);
   return data ?? [];

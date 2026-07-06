@@ -2,8 +2,9 @@ import { db } from "../db";
 import { getReplay, searchReplaysAll } from "../showdown/api";
 import { toID } from "../showdown/id";
 import type { ReplayJSON } from "../showdown/types";
-import { mergeGame, newTeamProfile, type TeamProfile } from "./merge";
+import { mergeGame, newTeamProfile } from "./merge";
 import { parseReplay } from "./parse";
+import { PROFILE_CONFLICT_KEY, profileFromRow, profileRow } from "./rows";
 import { PARSER_VERSION, type ParsedReplay } from "./types";
 
 /**
@@ -57,45 +58,6 @@ async function insertReplay(raw: ReplayJSON, parsed: ParsedReplay) {
   if (error) throw new Error(`replay upsert failed: ${error.message}`);
 }
 
-function profileRow(p: TeamProfile) {
-  return {
-    user_id: p.userId,
-    format_id: p.formatId,
-    fingerprint: p.fingerprint,
-    roster: p.rosterIds,
-    merged_reveals: {
-      mons: p.mons,
-      megaSlot: p.megaSlot,
-      replays: p.replays,
-      ties: p.ties,
-      displayName: p.displayName,
-    },
-    lead_pairs: p.leadPairs,
-    brings: p.brings,
-    wins: p.wins,
-    losses: p.losses,
-    first_seen: new Date(p.firstSeen * 1000).toISOString(),
-    last_seen: new Date(p.lastSeen * 1000).toISOString(),
-  };
-}
-
-function profileFromRow(row: Record<string, unknown>, base: TeamProfile): TeamProfile {
-  const merged = (row.merged_reveals ?? {}) as Partial<TeamProfile> & Record<string, never>;
-  return {
-    ...base,
-    mons: merged.mons ?? {},
-    megaSlot: merged.megaSlot ?? {},
-    replays: merged.replays ?? [],
-    ties: merged.ties ?? 0,
-    leadPairs: (row.lead_pairs as TeamProfile["leadPairs"]) ?? {},
-    brings: (row.brings as TeamProfile["brings"]) ?? {},
-    wins: (row.wins as number) ?? 0,
-    losses: (row.losses as number) ?? 0,
-    firstSeen: Math.floor(new Date(row.first_seen as string).getTime() / 1000),
-    lastSeen: Math.floor(new Date(row.last_seen as string).getTime() / 1000),
-  };
-}
-
 /** Merge one parsed replay into both players' team profiles. */
 async function mergeIntoProfiles(parsed: ParsedReplay, stats: ScoutStats) {
   for (const player of parsed.players) {
@@ -107,6 +69,7 @@ async function mergeIntoProfiles(parsed: ParsedReplay, stats: ScoutStats) {
       .eq("user_id", player.userId)
       .eq("format_id", parsed.formatId)
       .eq("fingerprint", fresh.fingerprint)
+      .eq("origin", "replay")
       .maybeSingle();
     if (error) throw new Error(`team_profiles lookup failed: ${error.message}`);
 
@@ -121,7 +84,7 @@ async function mergeIntoProfiles(parsed: ParsedReplay, stats: ScoutStats) {
 
     const { error: upErr } = await db()
       .from("team_profiles")
-      .upsert(profileRow(profile), { onConflict: "user_id,format_id,fingerprint" });
+      .upsert(profileRow(profile, "replay"), { onConflict: PROFILE_CONFLICT_KEY });
     if (upErr) throw new Error(`team_profiles upsert failed: ${upErr.message}`);
   }
 }

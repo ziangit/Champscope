@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- sprites are hotlinked from Showdown by design */
 import Link from "next/link";
 import { exportTeam } from "@/lib/scout/export";
-import { modal, type MergedMon } from "@/lib/scout/merge";
+import { modal, type MergedMon, type TeamSourceRef } from "@/lib/scout/merge";
 import type { TeamProfileRow } from "@/lib/queries";
 import { replayUrl, spriteUrl } from "@/lib/sprites";
 import { CopyButton } from "./CopyButton";
@@ -68,10 +68,42 @@ function MonSummary({ mon }: { mon: MergedMon }) {
   );
 }
 
+const ORIGIN_LABEL = { paste: "community paste", tournament: "tournament sheet" } as const;
+
+function SourceRow({ source }: { source: TeamSourceRef }) {
+  const record = source.record ? `${source.record.wins}-${source.record.losses}${source.record.ties ? `-${source.record.ties}` : ""}` : null;
+  return (
+    <tr className="border-t border-line first:border-t-0">
+      <td className="py-0.5">
+        <a href={source.url} target="_blank" rel="noreferrer" className="text-steel underline hover:text-ink">
+          {source.event ?? (source.kind === "paste" ? "pokepaste" : "sheet")}
+        </a>
+        {source.link && (
+          <a href={source.link} target="_blank" rel="noreferrer" className="ml-1 text-steel underline hover:text-ink" title="Where the team was originally shared">
+            ↗
+          </a>
+        )}
+      </td>
+      <td className="py-0.5 text-right text-steel">
+        {source.placing != null && `#${source.placing}`}
+        {record && ` (${record})`}
+        {source.rentalCode && (
+          <span className="ml-1 rounded bg-accent/10 px-1 text-accent" title="Replica / rental code">
+            {source.rentalCode}
+          </span>
+        )}
+      </td>
+      <td className="w-24 py-0.5 text-right text-steel">{source.sharedAt ? new Date(source.sharedAt * 1000).toISOString().slice(0, 10) : ""}</td>
+    </tr>
+  );
+}
+
 export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; showOwner?: boolean }) {
   const m = row.merged_reveals;
   const mons = Object.values(m.mons);
   const games = row.wins + row.losses + m.ties;
+  const origin = row.origin ?? "replay";
+  const sources = row.sources ?? [];
   const leadPairs = Object.entries(row.lead_pairs).sort((a, b) => b[1] - a[1]);
   const brings = Object.entries(row.brings).sort((a, b) => b[1] - a[1]);
   const megas = Object.entries(m.megaSlot ?? {}).sort((a, b) => b[1] - a[1]);
@@ -84,14 +116,24 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
             {m.displayName || row.user_id}
           </Link>
         )}
+        {origin !== "replay" && (
+          <span
+            className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-accent"
+            title={origin === "paste" ? "Imported from a shared paste — sets are as published, not battle-observed" : "Imported from an officially published open team sheet"}
+          >
+            {ORIGIN_LABEL[origin]}
+          </span>
+        )}
         <span className="font-mono text-xs text-steel" title="Team fingerprint: SHA-1 of the sorted base-forme species ids">
           sheet {row.fingerprint.slice(0, 8)}
         </span>
-        <span className="text-sm">
-          <span className="text-win">{row.wins}W</span>–<span className="text-loss">{row.losses}L</span>
-          {m.ties > 0 && <span className="text-steel">–{m.ties}T</span>}
-          <span className="ml-1 text-steel">({games} games)</span>
-        </span>
+        {(origin === "replay" || games > 0) && (
+          <span className="text-sm">
+            <span className="text-win">{row.wins}W</span>–<span className="text-loss">{row.losses}L</span>
+            {m.ties > 0 && <span className="text-steel">–{m.ties}T</span>}
+            <span className="ml-1 text-steel">({games} games)</span>
+          </span>
+        )}
         <span className="text-xs text-steel">
           {new Date(row.first_seen).toISOString().slice(0, 10)} → {new Date(row.last_seen).toISOString().slice(0, 10)}
         </span>
@@ -108,6 +150,24 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
         </div>
 
         <div className="space-y-4 px-4 py-3 text-sm md:border-l md:border-line">
+          {sources.length > 0 && (
+            <div>
+              <h3 className="font-display font-semibold uppercase tracking-wide text-steel">Sources</h3>
+              <table className="mt-1 w-full font-mono text-xs">
+                <tbody>
+                  {[...sources]
+                    .sort((a, b) => (b.sharedAt ?? 0) - (a.sharedAt ?? 0))
+                    .map((s) => (
+                      <SourceRow key={s.key} source={s} />
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {origin !== "replay" ? (
+            <p className="text-xs text-steel">● published set — EVs/natures appear only when the source includes them.</p>
+          ) : (
+            <>
           <div>
             <h3 className="font-display font-semibold uppercase tracking-wide text-steel">Lead pairs</h3>
             <table className="mt-1 w-full">
@@ -173,6 +233,8 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
           </div>
 
           <p className="text-xs text-steel">● from open team sheet &nbsp; ○ revealed in battle</p>
+            </>
+          )}
         </div>
       </div>
     </section>

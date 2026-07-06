@@ -36,6 +36,24 @@ export interface ReplayRef {
   rating: number | null;
 }
 
+/** Pointer to an imported team's origin (paste / tournament sheet). */
+export interface TeamSourceRef {
+  /** Dedupe identity — a team is ingested at most once per key. */
+  key: string;
+  /** Human-facing link to the source. */
+  url: string;
+  kind: "paste" | "tournament";
+  /** Where the team was originally shared (e.g. the creator's post), when known. */
+  link?: string;
+  event?: string;
+  placing?: number;
+  record?: { wins: number; losses: number; ties: number };
+  rentalCode?: string;
+  creator?: string;
+  /** unix seconds the team was shared / the event started */
+  sharedAt?: number;
+}
+
 export interface TeamProfile {
   userId: string;
   displayName: string;
@@ -51,6 +69,8 @@ export interface TeamProfile {
   ties: number;
   megaSlot: Record<string, number>; // base-forme id -> games it held the Mega
   replays: ReplayRef[];
+  /** 'replay' rows have no sources; imported rows have >= 1. */
+  sources: TeamSourceRef[];
   firstSeen: number; // uploadTime unix seconds
   lastSeen: number;
 }
@@ -108,9 +128,31 @@ export function newTeamProfile(player: ParsedPlayer, formatId: string): TeamProf
     ties: 0,
     megaSlot: {},
     replays: [],
+    sources: [],
     firstSeen: Number.MAX_SAFE_INTEGER,
     lastSeen: 0,
   };
+}
+
+/** Fold a roster of reveals into the profile's merged mons (shared by replay + import paths). */
+function mergeReveals(profile: TeamProfile, roster: PokemonReveal[]) {
+  for (const reveal of roster) {
+    const key = baseFormeId(reveal.species);
+    const mon = (profile.mons[key] ??= newMergedMon(reveal));
+    if (reveal.nickname && !mon.nicknames.includes(reveal.nickname)) mon.nicknames.push(reveal.nickname);
+    for (const move of reveal.moves) {
+      observe(mon.moves, move, reveal.fieldSources[`move:${toID(move)}`] ?? "revealed");
+    }
+    if (reveal.item) observe(mon.items, reveal.item, reveal.fieldSources.item ?? "revealed");
+    if (reveal.ability) observe(mon.abilities, reveal.ability, reveal.fieldSources.ability ?? "revealed");
+    if (reveal.teraType) observe(mon.teraTypes, reveal.teraType, reveal.fieldSources.teraType ?? "revealed");
+    if (reveal.megaForme) observe(mon.megaFormes, reveal.megaForme, "revealed");
+    if (reveal.nature) mon.nature = reveal.nature;
+    if (reveal.evs) mon.evs = reveal.evs;
+    if (reveal.ivs) mon.ivs = reveal.ivs;
+    // A 5th+ distinct move means set variations — keep counts, flag, never drop.
+    mon.setVariation = Object.keys(mon.moves).length > 4;
+  }
 }
 
 /**
@@ -128,23 +170,7 @@ export function mergeGame(profile: TeamProfile, player: ParsedPlayer, replay: Re
   else if (player.won) profile.wins += 1;
   else profile.losses += 1;
 
-  for (const reveal of player.roster) {
-    const key = baseFormeId(reveal.species);
-    const mon = (profile.mons[key] ??= newMergedMon(reveal));
-    if (reveal.nickname && !mon.nicknames.includes(reveal.nickname)) mon.nicknames.push(reveal.nickname);
-    for (const move of reveal.moves) {
-      observe(mon.moves, move, reveal.fieldSources[`move:${toID(move)}`] ?? "revealed");
-    }
-    if (reveal.item) observe(mon.items, reveal.item, reveal.fieldSources.item ?? "revealed");
-    if (reveal.ability) observe(mon.abilities, reveal.ability, reveal.fieldSources.ability ?? "revealed");
-    if (reveal.teraType) observe(mon.teraTypes, reveal.teraType, reveal.fieldSources.teraType ?? "revealed");
-    if (reveal.megaForme) observe(mon.megaFormes, reveal.megaForme, "revealed");
-    if (reveal.nature) mon.nature = reveal.nature;
-    if (reveal.evs) mon.evs = reveal.evs;
-    if (reveal.ivs) mon.ivs = reveal.ivs;
-    // A 5th+ distinct move means set variations — keep counts, flag, never drop.
-    mon.setVariation = Object.keys(mon.moves).length > 4;
-  }
+  mergeReveals(profile, player.roster);
 
   const broughtBase = player.brought.map(baseFormeId);
   for (const id of broughtBase) {
@@ -168,6 +194,32 @@ export function mergeGame(profile: TeamProfile, player: ParsedPlayer, replay: Re
     const id = baseFormeId(player.megaUser);
     profile.megaSlot[id] = (profile.megaSlot[id] ?? 0) + 1;
   }
+  return profile;
+}
+
+/** Fresh profile for an imported team (no battle data, roster only). */
+export function newImportedProfile(userId: string, displayName: string, formatId: string, roster: PokemonReveal[]): TeamProfile {
+  return newTeamProfile({ name: displayName, userId, roster, brought: [], leads: [], won: false }, formatId);
+}
+
+/**
+ * Merge an imported team (paste / tournament sheet) into a profile.
+ * Idempotent per source key — the same source merged twice is a no-op.
+ * The tournament record (when known) lands in wins/losses/ties.
+ */
+export function mergeImportedTeam(profile: TeamProfile, roster: PokemonReveal[], source: TeamSourceRef): TeamProfile {
+  if (profile.sources.some((s) => s.key === source.key)) return profile;
+  profile.sources.push(source);
+  if (source.sharedAt) {
+    profile.firstSeen = Math.min(profile.firstSeen, source.sharedAt);
+    profile.lastSeen = Math.max(profile.lastSeen, source.sharedAt);
+  }
+  if (source.record) {
+    profile.wins += source.record.wins;
+    profile.losses += source.record.losses;
+    profile.ties += source.record.ties;
+  }
+  mergeReveals(profile, roster);
   return profile;
 }
 

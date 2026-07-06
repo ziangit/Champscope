@@ -1,0 +1,31 @@
+# Scheduler for the team-source ingest (VGCPastes + pokedata.ovh): fires
+# weekly and drives the chunked worker route until every source reports
+# cooldown. "finished" only ends one source's pass — keep looping so the next
+# source starts. Everything is idempotent per source key; a re-run is cheap.
+#
+# Repo setup:
+#   Secret  CRON_SECRET — same value as the Vercel env var
+#   Variable INGEST_URL — e.g. https://champscope.vercel.app/api/ingest/run
+name: team-ingest
+on:
+  schedule:
+    - cron: "30 6 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  pass:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Drive the ingest pass to completion
+        run: |
+          for i in $(seq 1 200); do
+            out=$(curl --fail-with-body -sS \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              "${{ vars.INGEST_URL }}?trigger=gh")
+            echo "tick $i: $out"
+            case "$out" in
+              *'"status":"cooldown"'*) break ;;
+            esac
+            sleep 2
+          done

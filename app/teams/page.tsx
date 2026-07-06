@@ -1,21 +1,29 @@
 import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
-import { browseTeams, dbConfigured, listFormats } from "@/lib/queries";
+import { browseTeams, dbConfigured, listFormats, type TeamOrigin } from "@/lib/queries";
 import { toID } from "@/lib/showdown/id";
 
 export const dynamic = "force-dynamic";
 
+const ORIGINS: { value: TeamOrigin | ""; label: string }[] = [
+  { value: "", label: "any origin" },
+  { value: "replay", label: "replays" },
+  { value: "paste", label: "pastes" },
+  { value: "tournament", label: "tournament sheets" },
+];
+
 export default async function TeamsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ format?: string; species?: string }>;
+  searchParams: Promise<{ format?: string; species?: string; origin?: string }>;
 }) {
-  const { format, species } = await searchParams;
+  const { format, species, origin } = await searchParams;
   if (!dbConfigured()) return <SetupNotice />;
 
   const formats = await listFormats();
   const formatId = format ?? formats.find((f) => f.active)?.id;
-  const teams = await browseTeams({ formatId, species: species ? toID(species) : undefined });
+  const originFilter = ORIGINS.some((o) => o.value === origin) ? (origin as TeamOrigin) : undefined;
+  const teams = await browseTeams({ formatId, species: species ? toID(species) : undefined, origin: originFilter || undefined });
 
   return (
     <div className="space-y-6">
@@ -36,6 +44,20 @@ export default async function TeamsPage({
               placeholder="e.g. Basculegion"
               className="mt-1 block rounded border border-line bg-card px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent"
             />
+          </label>
+          <label className="block text-sm">
+            <span className="font-display font-semibold uppercase tracking-wide text-steel">Origin</span>
+            <select
+              name="origin"
+              defaultValue={originFilter ?? ""}
+              className="mt-1 block rounded border border-line bg-card px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              {ORIGINS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
           </label>
           <button type="submit" className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:text-ink">
             Filter

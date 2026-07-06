@@ -49,6 +49,37 @@ create table if not exists team_profiles (
 create index if not exists team_profiles_format_idx on team_profiles (format_id, last_seen desc);
 create index if not exists team_profiles_fingerprint_idx on team_profiles (format_id, fingerprint);
 
+-- Imported teams (pastes / tournament sheets) live alongside replay-observed
+-- ones so /match is a single query, but stay separate rows: origin joins the
+-- identity so `reparse` can rebuild replay rows without touching imports.
+alter table team_profiles add column if not exists origin text not null default 'replay';
+alter table team_profiles add column if not exists sources jsonb not null default '[]';
+alter table team_profiles drop constraint if exists team_profiles_user_id_format_id_fingerprint_key;
+create unique index if not exists team_profiles_identity_idx on team_profiles (user_id, format_id, fingerprint, origin);
+-- Source-key dedupe (jsonb containment on [{"key": ...}]) + roster overlap for /match.
+create index if not exists team_profiles_sources_gin on team_profiles using gin (sources jsonb_path_ops);
+create index if not exists team_profiles_roster_gin on team_profiles using gin (roster);
+
+-- Partial team match: teams in a format sharing >= p_min_overlap species with
+-- the (base-forme-normalized) input. GIN-prefiltered; the per-row intersection
+-- is a constant 6x6. Ordered best-overlap-first, then most recent.
+create or replace function match_teams(p_format_id text, p_species text[], p_min_overlap int default 4, p_limit int default 40)
+returns table (overlap int, profile jsonb)
+language sql stable as $$
+  select o.overlap, to_jsonb(p) as profile
+  from team_profiles p
+  cross join lateral (
+    select count(*)::int as overlap
+    from jsonb_array_elements_text(p.roster) r
+    where r = any (p_species)
+  ) o
+  where p.format_id = p_format_id
+    and p.roster ?| p_species
+    and o.overlap >= p_min_overlap
+  order by o.overlap desc, p.last_seen desc
+  limit p_limit;
+$$;
+
 create table if not exists ladder_snapshots (
   id         uuid primary key default gen_random_uuid(),
   format_id  text not null references formats(id),
@@ -76,7 +107,9 @@ create index if not exists scout_runs_format_idx on scout_runs (format_id, start
 grant usage on schema public to service_role;
 grant all on all tables in schema public to service_role;
 grant all on all sequences in schema public to service_role;
+grant execute on all functions in schema public to service_role;
 alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant execute on functions to service_role;
 
 -- Seed the verified Champions formats (idempotent; display names/mechanics from
 -- play.pokemonshowdown.com/data/formats.js, verified 2026-07-05).
