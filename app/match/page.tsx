@@ -1,6 +1,6 @@
 import { SetupNotice } from "@/components/SetupNotice";
 import { TeamCard } from "@/components/TeamCard";
-import { matchTeams } from "@/lib/match";
+import { matchTeams, parsePreviewSpecies } from "@/lib/match";
 import { dbConfigured, listFormats, type TeamProfileRow } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +38,7 @@ export default async function MatchPage({
 
   const formats = await listFormats();
   const formatId = format ?? formats.find((f) => f.active)?.id;
-  const names = (species ?? "")
-    .split(/[,\n]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const names = parsePreviewSpecies(species ?? "");
   const result = formatId && names.length > 0 ? await matchTeams(formatId, names) : null;
 
   return (
@@ -49,8 +46,8 @@ export default async function MatchPage({
       <div>
         <h1 className="font-display text-3xl font-bold uppercase tracking-wide">Match a preview</h1>
         <p className="mt-1 text-sm text-steel">
-          Paste the opponent&apos;s team preview — exact rosters first, then anything sharing 4+ of the same Pokémon.
-          An exact match under a different name is only ever a suggestion of an alt.
+          Paste a team — a pokepaste/teambuilder export or just species names. Exact rosters first, then anything
+          sharing 4+ of the same Pokémon. An exact match under a different name is only ever a suggestion of an alt.
         </p>
       </div>
 
@@ -69,12 +66,13 @@ export default async function MatchPage({
             ))}
           </select>
         </label>
-        <label className="block grow text-sm">
-          <span className="font-display font-semibold uppercase tracking-wide text-steel">Previewed species (up to 6, comma-separated)</span>
-          <input
+        <label className="block w-full text-sm">
+          <span className="font-display font-semibold uppercase tracking-wide text-steel">Team — pokepaste export or species names</span>
+          <textarea
             name="species"
             defaultValue={species ?? ""}
-            placeholder="e.g. Charizard, Basculegion, Kingambit, Sylveon, Rillaboom, Farigiraf"
+            rows={6}
+            placeholder={"Charizard @ Charizardite Y\nAbility: Blaze\n- Heat Wave\n...\n\n— or —  Charizard, Basculegion, Kingambit, Sylveon, Rillaboom, Farigiraf"}
             className="mt-1 block w-full rounded border border-line bg-card px-3 py-1.5 font-mono text-sm focus-visible:outline-2 focus-visible:outline-accent"
           />
         </label>

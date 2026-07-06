@@ -1,6 +1,20 @@
 import { db } from "./db";
 import type { TeamProfileRow } from "./queries";
 import { baseFormeId, teamFingerprint } from "./scout/formes";
+import { parseExportText } from "./scout/import";
+
+/**
+ * Free-form preview input: either a comma/newline species list or full
+ * Showdown export / pokepaste text (nobody types 6 names — they paste).
+ */
+export function parsePreviewSpecies(text: string): string[] {
+  const looksLikeExport = /^\s*-\s.+|^\s*Ability:|\S\s@\s\S/m.test(text);
+  if (looksLikeExport) return parseExportText(text).map((m) => m.species);
+  return text
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 /**
  * Team-preview matching: look up an opponent's previewed species in the team

@@ -88,6 +88,17 @@ describe("parseExportText", () => {
   });
 });
 
+describe("parsePreviewSpecies", () => {
+  it("accepts full export/pokepaste text and plain species lists alike", async () => {
+    const { parsePreviewSpecies } = await import("../lib/match");
+    expect(parsePreviewSpecies(PASTE)).toEqual(["Gardevoir", "Grimmsnarl"]);
+    expect(parsePreviewSpecies("Charizard, Basculegion, Kingambit")).toEqual(["Charizard", "Basculegion", "Kingambit"]);
+    expect(parsePreviewSpecies("Charizard\nBasculegion\n")).toEqual(["Charizard", "Basculegion"]);
+    // Itemless export (still has Ability/move lines) goes through the importer.
+    expect(parsePreviewSpecies("Incineroar\nAbility: Intimidate\n- Fake Out")).toEqual(["Incineroar"]);
+  });
+});
+
 describe("packStats", () => {
   it("packs stat lines positionally with blanks for defaults", () => {
     expect(packStats("252 HP / 4 SpA / 252 Spe")).toBe("252,,,4,,252");
