@@ -133,8 +133,21 @@ existing `matchTeams`. Agreed design:
   appliances, Urshifu style) before/after matching. 4-of-6 tier absorbs 1–2
   misreads anyway.
 - Screenshots feed the query side only — never stored into the team DB.
-- Open endpoint spends API money: add a minimal guard (shared secret in
-  localStorage or per-IP rate limit); still no real auth.
+- **Owner-gated, non-negotiable**: the screenshot route requires a private
+  bearer token (CRON_SECRET pattern; pasted once, kept in localStorage) —
+  strangers get 401 before any image is read. Rationale: the image is
+  forwarded to the owner's Anthropic API key, and user-submitted unsafe/illegal
+  content is an account-level risk; a personal tool has no reason to carry it.
+  Public exposure is explicitly OUT OF SCOPE — do not relax this. (If it were
+  ever opened: per-IP rate limit + size cap, image-hash cache incl. cached
+  rejections, `metadata.user_id` per requester, uniform recognized:false on
+  any refusal, no persistence, hash+outcome logs only.)
+- Input tiers by validated species count: >=4 → match (partial tier handles
+  4–5-mon screenshots natively); 1–3 → no auto-match, pre-fill the editable
+  input and ask; 0 → "not recognized". Lookalikes (Digimon/fakemon) fail the
+  species-validation gate naturally. All failures — off-topic, unsafe,
+  refusal, unparseable — collapse to the same user-facing "couldn't recognize
+  a competitive Pokémon team" (never characterize the image, never echo it).
 - **Eval fixtures live in `test/fixtures/screenshots/`** (7 real screenshots +
   MANIFEST.json with ground truth where text names the mons and unverified
   candidates for sprite-only ones). Manual eval script once the API key is
