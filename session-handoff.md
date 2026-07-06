@@ -19,6 +19,7 @@
 - **Regulation ground truth:** VGCPastes M-B tab starts 17 Jun 2026 ⇒ all finished official events incl. NAIC (Jun 12–14) are Reg M-A. `POKEDATA_WINDOWS` maps M-B from 2026-06-15 (empty today; Worlds lands automatically). M-A backfill = one config entry.
 
 ## Planned next
+- **Screenshot matching for /match** — design agreed + 7 eval fixtures in `test/fixtures/screenshots/` (see docs/TEAM-SOURCES.md "Screenshot matching"); blocked on the owner providing an `ANTHROPIC_API_KEY` for eval.
 - teamsheet.gg ingest; Smogon chaos priors (`usage_stats`); Tampermonkey userscript for /match.
 
 ## Open questions
