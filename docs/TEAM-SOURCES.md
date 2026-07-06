@@ -111,43 +111,53 @@ When facing an opponent on ladder, look up their previewed team in the DB
 - Still future: an optional Tampermonkey userscript that reads team preview from
   the battle DOM and opens `/match` prefilled; Showdex-fork overlay stays Phase 3.
 
-## Screenshot matching (designed 2026-07-06, not yet implemented)
+## Screenshot matching (final design 2026-07-06, not yet implemented)
 
-Third input adapter for /match: a screenshot (Showdown preview, Champions
-mobile/Switch team screen or battle preview) → LLM vision → species[] → the
-existing `matchTeams`. Agreed design:
+Third input adapter for /match: **digital screenshots only — photos are out of
+scope, and so is any LLM/API dependency.** Classical CV, ideally running
+client-side so images never reach the server (publicly shareable, zero cost,
+zero content risk). Species land in the existing editable input → `matchTeams`.
 
-- Client downscales to ~1024 px JPEG; `POST /api/match/screenshot`.
-- One vision call (Haiku-class, `ANTHROPIC_API_KEY` env) with **structured
-  output**: `{recognized, species: [{name, confidence}], layout}`. Prompt:
-  read the Pokémon, not the UI (Champions UI is post-cutoff); if the image is
-  not a Pokémon team screen return `recognized: false`.
-- **Server-side validation is the real fallback**: every name goes through
-  `toID` and is checked against known species; if < 4 valid species survive →
-  "not recognized" regardless of what the model said (hallucination guard).
-  Note this guard alone is insufficient: Pokémon *artwork* can carry 6 valid
-  names (see `negative-starter-illustration.png`) — the model's layout
-  classification ("is this a team/battle screen?") is what must reject those.
-- Extraction pre-fills the editable species input — human corrects misread
-  slots (sprite-ambiguous formes: Maushold count, Basculegion gender, Rotom
-  appliances, Urshifu style) before/after matching. 4-of-6 tier absorbs 1–2
-  misreads anyway.
-- Screenshots feed the query side only — never stored into the team DB.
-- **Owner-gated, non-negotiable**: the screenshot route requires a private
-  bearer token (CRON_SECRET pattern; pasted once, kept in localStorage) —
-  strangers get 401 before any image is read. Rationale: the image is
-  forwarded to the owner's Anthropic API key, and user-submitted unsafe/illegal
-  content is an account-level risk; a personal tool has no reason to carry it.
-  Public exposure is explicitly OUT OF SCOPE — do not relax this. (If it were
-  ever opened: per-IP rate limit + size cap, image-hash cache incl. cached
-  rejections, `metadata.user_id` per requester, uniform recognized:false on
-  any refusal, no persistence, hash+outcome logs only.)
-- Input tiers by validated species count: >=4 → match (partial tier handles
-  4–5-mon screenshots natively); 1–3 → no auto-match, pre-fill the editable
-  input and ask; 0 → "not recognized". Lookalikes (Digimon/fakemon) fail the
-  species-validation gate naturally. All failures — off-topic, unsafe,
-  refusal, unparseable — collapse to the same user-facing "couldn't recognize
-  a competitive Pokémon team" (never characterize the image, never echo it).
+Supported inputs and their recognizers:
+
+1. **Pokepaste / export text / species list** — already live.
+2. **Showdown screenshots** (preview strip, side panel, battle preview):
+   template matching against the known Showdown sprite sheets. Screenshots are
+   pixel-faithful, so this is deterministic — no training, no model.
+   *Asset-rule note:* sprite sheets are fetched at runtime and cached as
+   internal recognition templates, never bundled or served — a deliberate,
+   intent-preserving reading of the "no bundled Pokémon assets" rule.
+3. **Champions mobile/Switch team screens with text** (see the ja fixtures):
+   OCR on species names + a JA→EN species table; can also lift items/abilities
+   /moves. **Must be anchored to Champions UI layout** (team header, tab
+   labels, slot structure) — `negative-starter-illustration.png` proves that
+   "OCR found species words" alone is insufficient (artwork carries valid
+   names). The layout anchor is the reject gate.
+
+Explicitly unsupported (fall back to manual entry in the editable input):
+
+- **Photos of screens** — no special detection needed: the classical pipeline
+  fails naturally on photo distortion → "not recognized — upload a screenshot,
+  not a photo". (Solving photos would require an LLM vision call — cost/abuse
+  /account-risk on an open endpoint — or a self-trained model whose real cost
+  is a per-species Champions render gallery + photo-degradation synthetic
+  data. Both evaluated 2026-07-06 and deliberately deferred; revisit only if
+  screenshot-only proves too limiting.)
+- **Champions render-only previews** (doubles select strip, vertical battle
+  preview fixtures): no text, and template matching would need that same
+  render gallery.
+
+Shared rules regardless of recognizer:
+
+- Validated-species tiers: >=4 → match (partial tier handles 4–5-mon
+  screenshots natively); 1–3 → no auto-match, pre-fill and ask; 0 → "not
+  recognized". Every extracted name is validated via `toID` against known
+  species (lookalikes/fakemon fail here naturally).
+- All failures collapse to one user-facing message; the image is never
+  characterized, echoed, or persisted. Screenshots feed the query side only —
+  never the team DB.
+- Eval fixtures in `test/fixtures/screenshots/` (7 positives + 1 hard
+  negative; MANIFEST.json marks which are in scope for which recognizer).
 - **Eval fixtures live in `test/fixtures/screenshots/`** (7 real screenshots +
   MANIFEST.json with ground truth where text names the mons and unverified
   candidates for sprite-only ones). Manual eval script once the API key is

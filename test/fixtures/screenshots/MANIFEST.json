@@ -1,5 +1,6 @@
 {
-  "purpose": "Eval fixtures for the planned screenshot-matching feature (LLM vision -> species[] -> /match). See docs/TEAM-SOURCES.md 'Screenshot matching'. Provided by the project owner 2026-07-06.",
+  "purpose": "Eval fixtures for the planned screenshot-matching feature (classical CV: sprite template matching + OCR; digital screenshots only, photos and LLM explicitly out of scope). See docs/TEAM-SOURCES.md 'Screenshot matching'. Provided by the project owner 2026-07-06.",
+  "scopeNote": "In scope: showdown-* (template matching), champions-mobile-* (OCR + layout anchor). Out of scope, expect manual entry: champions-doubles-select-strip-ja.png and champions-battle-preview-vertical-ja.png (render-only, would need a per-species render gallery). negative-starter-illustration.png must be rejected by the OCR layout anchor.",
   "groundTruthNotes": "expectedSpecies is authoritative only where the screenshot contains text naming the mons (the Japanese Champions team screens). Sprite-only screenshots carry unverified best-guess candidates ('?' = low confidence) — confirm during the first eval run and then promote to expectedSpecies.",
   "fixtures": [
     {
