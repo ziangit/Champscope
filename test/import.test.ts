@@ -55,6 +55,7 @@ describe("parseExportText", () => {
     const profile = mergeImportedTeam(newImportedProfile("tester", "Tester", "fmt", mons), mons, {
       key: "https://pokepast.es/ec3f1186fd68b9ba",
       url: "https://pokepast.es/ec3f1186fd68b9ba",
+      provider: "VGCPastes",
       kind: "paste",
       sharedAt: 1751500000,
     });
@@ -79,7 +80,7 @@ describe("parseExportText", () => {
 
   it("mergeImportedTeam is idempotent per source key", () => {
     const mons = parseExportText(PASTE);
-    const src = { key: "k1", url: "u", kind: "paste" as const, sharedAt: 100 };
+    const src = { key: "k1", url: "u", provider: "VGCPastes", kind: "paste" as const, sharedAt: 100 };
     const profile = newImportedProfile("tester", "Tester", "fmt", mons);
     mergeImportedTeam(profile, mons, src);
     mergeImportedTeam(profile, mons, src);
@@ -151,7 +152,7 @@ describe("pokedataToReveals", () => {
     // Same fingerprint as the identical roster written with Showdown names.
     expect(teamFingerprint(reveals.map((r) => r.species))).toBe(teamFingerprint(["Charizard", "Basculegion"]));
     // The export of an EV-less sheet has no EV/nature fabrication beyond the sheet's nature.
-    const profile = mergeImportedTeam(newImportedProfile("t", "T", "fmt", reveals), reveals, { key: "k", url: "u", kind: "tournament", sharedAt: 1 });
+    const profile = mergeImportedTeam(newImportedProfile("t", "T", "fmt", reveals), reveals, { key: "k", url: "u", provider: "pokedata.ovh", kind: "tournament", sharedAt: 1 });
     expect(exportMon(profile.mons.charizard)).not.toMatch(/EVs|IVs/);
     expect(exportMon(profile.mons.charizard)).toContain("Modest Nature");
   });

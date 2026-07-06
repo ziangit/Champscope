@@ -99,6 +99,7 @@ export async function ingestVgcpastesEntry(entry: VgcpastesEntry, cfg: Vgcpastes
     source: {
       key,
       url: key,
+      provider: "VGCPastes",
       kind: "paste",
       link: entry.sourceLink,
       event: entry.event,

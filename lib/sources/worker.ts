@@ -171,6 +171,7 @@ async function pokedataChunk(cursor: IngestCursor, deadline: number) {
             source: {
               key: `pokedata:${t.rk9link}:${userId}`,
               url: `https://www.pokedata.ovh/apiv2/id/${t.rk9link}/decklists`,
+              provider: "pokedata.ovh",
               kind: "tournament",
               event: t.name,
               placing: p.placing,

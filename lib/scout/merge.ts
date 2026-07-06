@@ -42,6 +42,8 @@ export interface TeamSourceRef {
   key: string;
   /** Human-facing link to the source. */
   url: string;
+  /** Named provider the team came from, e.g. "VGCPastes", "pokedata.ovh". */
+  provider: string;
   kind: "paste" | "tournament";
   /** Where the team was originally shared (e.g. the creator's post), when known. */
   link?: string;

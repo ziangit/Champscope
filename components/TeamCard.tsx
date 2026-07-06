@@ -68,16 +68,28 @@ function MonSummary({ mon }: { mon: MergedMon }) {
   );
 }
 
-const ORIGIN_LABEL = { paste: "community paste", tournament: "tournament sheet" } as const;
+const ORIGIN_TITLE = {
+  replay: "Observed in public ladder replays",
+  paste: "Imported from a shared paste — sets are as published, not battle-observed",
+  tournament: "Imported from an officially published open team sheet",
+} as const;
+
+/** Badge text: the named provider when there is one, otherwise the origin. */
+function originBadge(origin: keyof typeof ORIGIN_TITLE, sources: TeamSourceRef[]): string {
+  if (origin === "replay") return "ladder";
+  if (origin === "tournament") return "official tournament";
+  return sources[0]?.provider ?? "community paste";
+}
 
 function SourceRow({ source }: { source: TeamSourceRef }) {
   const record = source.record ? `${source.record.wins}-${source.record.losses}${source.record.ties ? `-${source.record.ties}` : ""}` : null;
   return (
     <tr className="border-t border-line first:border-t-0">
       <td className="py-0.5">
-        <a href={source.url} target="_blank" rel="noreferrer" className="text-steel underline hover:text-ink">
-          {source.event ?? (source.kind === "paste" ? "pokepaste" : "sheet")}
+        <a href={source.url} target="_blank" rel="noreferrer" className="underline hover:text-accent">
+          {source.provider ?? (source.kind === "paste" ? "paste" : "tournament sheet")}
         </a>
+        {source.event && <span className="text-steel"> — {source.event}</span>}
         {source.link && (
           <a href={source.link} target="_blank" rel="noreferrer" className="ml-1 text-steel underline hover:text-ink" title="Where the team was originally shared">
             ↗
@@ -116,14 +128,9 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
             {m.displayName || row.user_id}
           </Link>
         )}
-        {origin !== "replay" && (
-          <span
-            className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-accent"
-            title={origin === "paste" ? "Imported from a shared paste — sets are as published, not battle-observed" : "Imported from an officially published open team sheet"}
-          >
-            {ORIGIN_LABEL[origin]}
-          </span>
-        )}
+        <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-accent" title={ORIGIN_TITLE[origin]}>
+          {originBadge(origin, sources)}
+        </span>
         <span className="font-mono text-xs text-steel" title="Team fingerprint: SHA-1 of the sorted base-forme species ids">
           sheet {row.fingerprint.slice(0, 8)}
         </span>
