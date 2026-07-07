@@ -1,3 +1,4 @@
+import { ScreenshotInput } from "@/components/ScreenshotInput";
 import { SetupNotice } from "@/components/SetupNotice";
 import { TeamCard } from "@/components/TeamCard";
 import { matchTeams, parsePreviewSpecies } from "@/lib/match";
@@ -67,8 +68,9 @@ export default async function MatchPage({
           </select>
         </label>
         <label className="block w-full text-sm">
-          <span className="font-display font-semibold uppercase tracking-wide text-steel">Team — pokepaste export or species names</span>
+          <span className="font-display font-semibold uppercase tracking-wide text-steel">Team — pokepaste export, species names, or a screenshot</span>
           <textarea
+            id="match-species-input"
             name="species"
             defaultValue={species ?? ""}
             rows={6}
@@ -76,6 +78,7 @@ export default async function MatchPage({
             className="mt-1 block w-full rounded border border-line bg-card px-3 py-1.5 font-mono text-sm focus-visible:outline-2 focus-visible:outline-accent"
           />
         </label>
+        <ScreenshotInput textareaId="match-species-input" />
         <button type="submit" className="rounded bg-accent px-4 py-1.5 font-display font-semibold uppercase tracking-wide text-white hover:opacity-90">
           Match
         </button>

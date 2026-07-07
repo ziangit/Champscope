@@ -111,7 +111,23 @@ When facing an opponent on ladder, look up their previewed team in the DB
 - Still future: an optional Tampermonkey userscript that reads team preview from
   the battle DOM and opens `/match` prefilled; Showdex-fork overlay stays Phase 3.
 
-## Screenshot matching (final design 2026-07-06, not yet implemented)
+## Screenshot matching (IMPLEMENTED 2026-07-06 — EXPERIMENTAL, Showdown only)
+
+> Status: shipped as an experimental pre-fill on /match (`lib/cv/`,
+> `POST /api/match/screenshot`, upload button). Precision-first calibration:
+> what it finds is usually right; crowded battle previews extract partially
+> and the user completes the rest in the editable input (the designed UX).
+> Scorecard + config in `test/fixtures/screenshots/MANIFEST.json`. Template
+> data (`data/cv/*.json`, ~7 MB numeric signatures) regenerates with
+> `npx tsx scripts/build-cv-templates.ts --cache <dir>` (sprites cache to
+> disk; only the first run fetches). Hard-won findings: Showdown battle
+> surfaces render `sprites/ani/` XY-style ANIMATED sprites (arbitrary frame
+> on screen; 3 frames/species as templates), forme filenames are hyphenated
+> (`spriteId()`), the player's side renders MIRRORED, preview sprites
+> overlap/occlude each other, and grid-signature affine matching — even
+> trimmed, scale-anchored, and margin-gated — cannot fully separate
+> overlap-degraded true matches from fragment/texture fits. The deferred
+> trained-model path (embedding gallery) is the durable fix for full recall.
 
 Third input adapter for /match: **digital screenshots only — photos are out of
 scope, and so is any LLM/API dependency.** Classical CV, ideally running

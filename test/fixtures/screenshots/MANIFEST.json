@@ -1,6 +1,6 @@
 {
   "purpose": "Eval fixtures for the planned screenshot-matching feature (classical CV: sprite template matching + OCR; digital screenshots only, photos and LLM explicitly out of scope). See docs/TEAM-SOURCES.md 'Screenshot matching'. Provided by the project owner 2026-07-06.",
-  "scopeNote": "In scope: showdown-* (template matching), champions-mobile-* (OCR + layout anchor). Out of scope, expect manual entry: champions-doubles-select-strip-ja.png and champions-battle-preview-vertical-ja.png (render-only, would need a per-species render gallery). negative-starter-illustration.png must be rejected by the OCR layout anchor.",
+  "scopeNote": "DECISION 2026-07-06: Showdown screenshots only for now — all Champions (mobile/NS) fixtures are future work (fixtures carry a scope field; the eval skips scope:'future'). Findings recorded for that future work: Champions mobile team screens use Champions' own NEW menu-sprite artwork (matches neither Showdown box icons nor pokesprite gen8 HOME icons; no public source exists yet for a game this new). Champions select screens DO reuse the official HOME renders (= Showdown dex sprites — verified visually), so the doubles-select strip becomes matchable the moment the dex template set is enabled. Showdown surfaces render XY-style animated sprites (sprites/ani/, hyphenated forme filenames) — templates take 3 frames per species. negative-starter-illustration.png must match no template set.",
   "groundTruthNotes": "expectedSpecies is authoritative only where the screenshot contains text naming the mons (the Japanese Champions team screens). Sprite-only screenshots carry unverified best-guess candidates ('?' = low confidence) — confirm during the first eval run and then promote to expectedSpecies.",
   "fixtures": [
     {
@@ -8,32 +8,111 @@
       "kind": "showdown-team-preview-strip",
       "description": "Cropped Showdown team preview header: format tag [gen9championsvgc2026regmb], player 'YOASOBI stan', 6 minisprites, no species text.",
       "expectedSpecies": null,
-      "candidates": ["Mismagius", "Scovillain?", "Eldegoss?", "Basculegion-F?", "Basculegion?", "Enamorus?"],
-      "expectRecognized": true
+      "candidates": [
+        "Mismagius",
+        "Scovillain?",
+        "Eldegoss?",
+        "Basculegion-F?",
+        "Basculegion?",
+        "Enamorus?"
+      ],
+      "expectRecognized": true,
+      "scope": "showdown"
     },
     {
       "file": "champions-mobile-team-abilities-ja.png",
       "kind": "champions-mobile-team-screen",
       "language": "ja",
       "description": "Pokemon Champions mobile team screen (ability/moves tab), Japanese. Species names in text; slot 4 is nicknamed 'Hai' (Garchomp by sprite/ability). Rich ground truth incl. items/abilities/moves.",
-      "expectedSpecies": ["Scovillain", "Basculegion", "Snorlax", "Garchomp", "Gyarados", "Staraptor"],
+      "expectedSpecies": [
+        "Scovillain",
+        "Basculegion",
+        "Snorlax",
+        "Garchomp",
+        "Gyarados",
+        "Staraptor"
+      ],
       "details": {
-        "Scovillain": { "ability": "Moody", "item": "Leftovers", "moves": ["Flamethrower", "Leech Seed", "Protect", "Substitute"] },
-        "Basculegion": { "ability": "Adaptability", "item": "Focus Sash", "moves": ["Wave Crash", "Last Respects", "Flip Turn", "Aqua Jet"] },
-        "Snorlax": { "ability": "Thick Fat", "item": "Chople Berry", "moves": ["Earthquake", "Self-Destruct", "Yawn", "Fissure"] },
-        "Garchomp": { "nickname": "Hai", "ability": "Rough Skin", "item": "Sitrus Berry", "moves": ["Earthquake", "Scale Shot", "Stealth Rock", "Dragon Tail"] },
-        "Gyarados": { "ability": "Intimidate", "item": "Gyaradosite", "moves": ["Dragon Dance", "Ice Fang", "Waterfall", "Earthquake"] },
-        "Staraptor": { "ability": "Intimidate", "item": "Choice Scarf", "moves": ["Brave Bird", "Close Combat", "U-turn", "Final Gambit"] }
+        "Scovillain": {
+          "ability": "Moody",
+          "item": "Leftovers",
+          "moves": [
+            "Flamethrower",
+            "Leech Seed",
+            "Protect",
+            "Substitute"
+          ]
+        },
+        "Basculegion": {
+          "ability": "Adaptability",
+          "item": "Focus Sash",
+          "moves": [
+            "Wave Crash",
+            "Last Respects",
+            "Flip Turn",
+            "Aqua Jet"
+          ]
+        },
+        "Snorlax": {
+          "ability": "Thick Fat",
+          "item": "Chople Berry",
+          "moves": [
+            "Earthquake",
+            "Self-Destruct",
+            "Yawn",
+            "Fissure"
+          ]
+        },
+        "Garchomp": {
+          "nickname": "Hai",
+          "ability": "Rough Skin",
+          "item": "Sitrus Berry",
+          "moves": [
+            "Earthquake",
+            "Scale Shot",
+            "Stealth Rock",
+            "Dragon Tail"
+          ]
+        },
+        "Gyarados": {
+          "ability": "Intimidate",
+          "item": "Gyaradosite",
+          "moves": [
+            "Dragon Dance",
+            "Ice Fang",
+            "Waterfall",
+            "Earthquake"
+          ]
+        },
+        "Staraptor": {
+          "ability": "Intimidate",
+          "item": "Choice Scarf",
+          "moves": [
+            "Brave Bird",
+            "Close Combat",
+            "U-turn",
+            "Final Gambit"
+          ]
+        }
       },
-      "expectRecognized": true
+      "expectRecognized": true,
+      "scope": "future"
     },
     {
       "file": "champions-mobile-team-stats-ja.png",
       "kind": "champions-mobile-team-screen",
       "language": "ja",
       "description": "Same team as champions-mobile-team-abilities-ja.png, stats tab (HP/Atk/... with EV-like allocations). Same expected species; nickname 'Hai' on the Garchomp slot.",
-      "expectedSpecies": ["Scovillain", "Basculegion", "Snorlax", "Garchomp", "Gyarados", "Staraptor"],
-      "expectRecognized": true
+      "expectedSpecies": [
+        "Scovillain",
+        "Basculegion",
+        "Snorlax",
+        "Garchomp",
+        "Gyarados",
+        "Staraptor"
+      ],
+      "expectRecognized": true,
+      "scope": "future"
     },
     {
       "file": "champions-doubles-select-strip-ja.png",
@@ -41,31 +120,56 @@
       "language": "ja",
       "description": "Champions doubles ('だぶる') selection strip: 6 model renders with held-item icons, no species text.",
       "expectedSpecies": null,
-      "candidates": ["Whimsicott", "Charizard", "Mimikyu", "Staraptor", "Passimian?", "Mienshao?"],
-      "expectRecognized": true
+      "candidates": [
+        "Whimsicott",
+        "Charizard",
+        "Mimikyu",
+        "Staraptor",
+        "Passimian?",
+        "Mienshao?"
+      ],
+      "expectRecognized": true,
+      "scope": "future"
     },
     {
       "file": "showdown-battle-preview-models.png",
       "kind": "showdown-battle-preview",
       "description": "Showdown battle team preview (animated battle sprites with gender + L50 tags), no species text.",
-      "expectedSpecies": null,
-      "candidates": ["Incineroar", "Whimsicott", "Brute Bonnet?", "Passimian?", "Raichu", "Ninetales-Alola?"],
-      "expectRecognized": true
+      "expectedSpecies": [
+        "Incineroar",
+        "Whimsicott",
+        "Basculegion",
+        "Gholdengo",
+        "Raichu",
+        "Ninetales-Alola"
+      ],
+      "expectRecognized": true,
+      "scope": "showdown",
+      "groundTruthSource": "parsed from siguii2's replay gen9championsvgc2026regmb-2645089420 via our own parser (authoritative)"
     },
     {
       "file": "showdown-side-panel-minisprites.png",
       "kind": "showdown-side-panel",
       "description": "Showdown battle side panel: trainer 'Siguii2' with 6 tiny minisprites (hardest case: ~30px sprites). Appears to be the same/similar team as showdown-battle-preview-models.png.",
-      "expectedSpecies": null,
-      "candidates": ["Brute Bonnet?", "Whimsicott", "Basculegion-F?", "Passimian?", "Raichu", "Ninetales-Alola?"],
-      "expectRecognized": true
+      "expectedSpecies": [
+        "Incineroar",
+        "Whimsicott",
+        "Basculegion",
+        "Gholdengo",
+        "Raichu",
+        "Ninetales-Alola"
+      ],
+      "expectRecognized": true,
+      "scope": "showdown",
+      "groundTruthSource": "parsed from siguii2's replay gen9championsvgc2026regmb-2645089420 via our own parser (authoritative)"
     },
     {
       "file": "negative-starter-illustration.png",
       "kind": "negative",
       "description": "Cute starter-Pokemon illustration (Rowlet/Litten/Popplio/Sprigatito/Fuecoco/Quaxly with name tags). HARD negative: 6 valid, readable species names but NOT a team/battle screen — species-count validation alone would wrongly pass it. The model's layout classification must return recognized:false (artwork, not a competitive team).",
       "expectedSpecies": null,
-      "expectRecognized": false
+      "expectRecognized": false,
+      "scope": "showdown"
     },
     {
       "file": "champions-battle-preview-vertical-ja.png",
@@ -73,9 +177,28 @@
       "language": "ja",
       "description": "Champions battle team preview, vertical layout (opponent 'ネギねこ', Standing By): 6 slots with model renders, type + gender icons only, some models partially obscured/shiny. Hardest Champions case.",
       "expectedSpecies": null,
-      "candidates": ["Whimsicott", "Mienshao?", "Charizard (shiny?)", "Basculegion (shiny?)", "?", "Kingambit?"],
-      "expectRecognized": true
+      "candidates": [
+        "Whimsicott",
+        "Mienshao?",
+        "Charizard (shiny?)",
+        "Basculegion (shiny?)",
+        "?",
+        "Kingambit?"
+      ],
+      "expectRecognized": true,
+      "scope": "future"
     }
   ],
-  "negativeCasesTodo": "One hard negative on file (Pokemon artwork with valid names). Still add 1-2 fully unrelated screenshots (non-Pokemon game, desktop) before the eval."
+  "negativeCasesTodo": "One hard negative on file (Pokemon artwork with valid names). Still add 1-2 fully unrelated screenshots (non-Pokemon game, desktop) before the eval.",
+  "evalScorecard": {
+    "date": "2026-07-06",
+    "config": "precision-first (lib/cv/recognize.ts CLASSIFY + sprite gates 10/0.88, blob templates 5.5/0.92)",
+    "results": {
+      "showdown-side-panel-minisprites.png": "4 returned / 3 correct (Basculegion, Raichu, Whimsicott; 1 wrong: Electrode)",
+      "showdown-battle-preview-models.png": "3 returned / 1 correct (Ninetales-Alola; wrong: Finizen, Wimpod)",
+      "showdown-preview-strip.png": "1 returned / likely wrong (Ditto)",
+      "negative-starter-illustration.png": "correctly rejected (also verified through the live route)"
+    },
+    "verdict": "EXPERIMENTAL: high-precision on side panels, partial on crowded battle previews. Extraction pre-fills the editable input; manual entry remains primary. Known root cause: 14x14 masked-grid affine scoring cannot decisively separate near-correct large-window matches from small fragment/texture fits under sprite overlap; the deferred trained-model (embedding gallery) path is the durable fix."
+  }
 }

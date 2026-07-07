@@ -19,7 +19,7 @@
 - **Regulation ground truth:** VGCPastes M-B tab starts 17 Jun 2026 ⇒ all finished official events incl. NAIC (Jun 12–14) are Reg M-A. `POKEDATA_WINDOWS` maps M-B from 2026-06-15 (empty today; Worlds lands automatically). M-A backfill = one config entry.
 
 ## Planned next
-- **Screenshot matching for /match** — FINAL design in docs/TEAM-SOURCES.md "Screenshot matching": digital screenshots only, classical CV (Showdown sprite template matching + Champions OCR with layout anchor), client-side preferred, NO photos / NO LLM / no API key needed. 8 eval fixtures in `test/fixtures/screenshots/` (manifest marks per-recognizer scope).
+- **Screenshot matching** — IMPLEMENTED 2026-07-06 as EXPERIMENTAL, Showdown-only, NOT yet pushed (owner testing locally). `lib/cv/` (detect/signature/match/recognize), `POST /api/match/screenshot`, upload button on /match, `data/cv/*.json` template signatures, `scripts/build-cv-templates.ts` + `scripts/eval-screenshots.ts`. Precision-first: side panels extract well (3-4/6 all-correct-ish), crowded battle previews partial, artwork negative rejected (verified through the live route). Scorecard + root-cause analysis in the fixtures MANIFEST + docs/TEAM-SOURCES.md. Champions (mobile/NS) surfaces deferred (no public sprite source for Champions' new menu art; select screens DO reuse HOME renders = the built dex.json set, disabled until Champions scope resumes). Durable full-recall fix = the deferred embedding-gallery/trained-model path.
 - teamsheet.gg ingest; Smogon chaos priors (`usage_stats`); Tampermonkey userscript for /match.
 
 ## Open questions

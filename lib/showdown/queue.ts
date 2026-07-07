@@ -96,3 +96,8 @@ export function queuedJSON<T>(url: string, opts?: PoliteFetchOptions): Promise<T
 export function queuedText(url: string, opts?: PoliteFetchOptions): Promise<string> {
   return enqueue(url, async (lane) => (await politeFetch(lane, url, opts)).text());
 }
+
+/** Fetch binary content (sprite images for CV templates) through the polite queue. */
+export function queuedBytes(url: string, opts?: PoliteFetchOptions): Promise<Buffer> {
+  return enqueue(url, async (lane) => Buffer.from(await (await politeFetch(lane, url, opts)).arrayBuffer()));
+}
