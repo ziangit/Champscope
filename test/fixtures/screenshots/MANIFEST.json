@@ -191,14 +191,14 @@
   ],
   "negativeCasesTodo": "One hard negative on file (Pokemon artwork with valid names). Still add 1-2 fully unrelated screenshots (non-Pokemon game, desktop) before the eval.",
   "evalScorecard": {
-    "date": "2026-07-06",
-    "config": "precision-first (lib/cv/recognize.ts CLASSIFY + sprite gates 10/0.88, blob templates 5.5/0.92)",
+    "date": "2026-07-06 (rev 2: grid completion)",
+    "config": "precision-first gates + strict-anchor grid completion (side panel 2x3 / preview 1x6 layouts): confident hits reveal the grid, empty slots classify with relaxed gates and are marked inferred ('Name?' in the UI), off-grid hits (trainer sprite) are dropped. Grid anchors must be strict finals — artwork also arranges subjects in grids (the negative is a 2x3 illustration).",
     "results": {
-      "showdown-side-panel-minisprites.png": "4 returned / 3 correct (Basculegion, Raichu, Whimsicott; 1 wrong: Electrode)",
-      "showdown-battle-preview-models.png": "3 returned / 1 correct (Ninetales-Alola; wrong: Finizen, Wimpod)",
-      "showdown-preview-strip.png": "1 returned / likely wrong (Ditto)",
-      "negative-starter-illustration.png": "correctly rejected (also verified through the live route)"
+      "showdown-side-panel-minisprites.png": "PASS 4/6 correct (Basculegion, Raichu, Whimsicott, Incineroar; inferred-wrong: Froslass-Mega for Ninetales-Alola, Cosmog for faded Gholdengo — Gholdengo's sprite is unrecoverable even by hand, corr 0)",
+      "showdown-battle-preview-models.png": "partial: 1/3 correct (Ninetales-Alola; wrong: Finizen, Wimpod) — too few strict anchors to infer the row grid",
+      "showdown-preview-strip.png": "1 junk blob hit (Ditto)",
+      "negative-starter-illustration.png": "correctly rejected"
     },
-    "verdict": "EXPERIMENTAL: high-precision on side panels, partial on crowded battle previews. Extraction pre-fills the editable input; manual entry remains primary. Known root cause: 14x14 masked-grid affine scoring cannot decisively separate near-correct large-window matches from small fragment/texture fits under sprite overlap; the deferred trained-model (embedding gallery) path is the durable fix."
+    "verdict": "EXPERIMENTAL: the in-battle side panel — the primary real-world surface — extracts 4/6 with wrong fills marked '?'. Crowded team-preview renders stay partial. Root cause stands: grid-signature affine matching under overlap/occlusion; durable fix = embedding-gallery/trained model."
   }
 }

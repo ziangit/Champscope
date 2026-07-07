@@ -16,7 +16,7 @@ export interface RecognizedTeam {
   recognized: boolean;
   /** ">=4 species" auto-matches; "1-3" pre-fills and asks; "none" is rejected. */
   tier: "match" | "partial" | "none";
-  species: { id: string; name: string; score: number; source: string }[];
+  species: { id: string; name: string; score: number; source: string; inferred: boolean }[];
 }
 
 export interface TemplateSets {
@@ -58,7 +58,7 @@ export function recognizeTeam(img: RGBAImage, sets: TemplateSets, opts: Classify
     ],
     opts,
   );
-  const species = hits.slice(0, 6).map((h) => ({ id: h.id, name: h.name, score: h.score, source: h.source }));
+  const species = hits.slice(0, 6).map((h) => ({ id: h.id, name: h.name, score: h.score, source: h.source, inferred: h.inferred ?? false }));
   const tier = tierOf(species.length);
   return { recognized: tier !== "none", tier, species };
 }

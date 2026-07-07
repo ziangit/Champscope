@@ -34,6 +34,9 @@ export interface SpriteHit {
   score: number; // affine residual RMSE, lower = stronger
   corr: number; // structural correlation at the accepted alignment
   source: string; // which template set produced the hit
+  /** True when the hit came from grid completion (relaxed gates on a slot
+   * the layout says must contain a sprite) — review-worthy. */
+  inferred?: boolean;
   x: number;
   y: number;
   w: number;
@@ -115,6 +118,7 @@ interface Scored extends Rect {
   t: Prepared;
   score: number;
   corr: number;
+  inferred?: boolean;
 }
 
 function overlapFrac(a: Rect, b: Rect): number {
@@ -397,15 +401,176 @@ export function classifyImage(img: RGBAImage, sets: LabeledSet[], opts?: Classif
   for (const hit of kept) {
     if (!bySpecies.has(hit.t.t.id)) bySpecies.set(hit.t.t.id, hit);
   }
-  return [...bySpecies.values()].map((h) => ({
+  let final = [...bySpecies.values()];
+
+  // GRID COMPLETION — team UIs lay sprites out on regular grids (side panel
+  // 2x3, previews 1x6). With >=2 confident hits the grid is inferable: slots
+  // without a hit MUST contain a sprite, so classify them with relaxed gates;
+  // hits far off-grid (trainer sprites, decorations) get dropped.
+  // Grid anchors must be STRICT finals: artwork also arranges subjects on
+  // regular grids (the negative fixture is a 2x3 illustration!), so weaker
+  // evidence anchoring a grid hallucinates teams on non-screenshots.
+  const anchors = final.filter((h) => h.score <= 9 && h.corr >= 0.85 && !h.t.blob);
+  if (anchors.length >= 2 && final.length <= 7) {
+    const medW = median(anchors.map((h) => h.w));
+    const medH = median(anchors.map((h) => h.h));
+    const cols = axisPositions(anchors.map((h) => h.x + h.w / 2), medW * 0.5, img.width, 6);
+    const rows = axisPositions(anchors.map((h) => h.y + h.h / 2), medH * 0.5, img.height, 3);
+    if (cols.length >= 2 && cols.length * rows.length <= 12) {
+      const cellW = Math.round(medW * 1.15);
+      const cellH = Math.round(medH * 1.15);
+      const cells: Rect[] = [];
+      for (const cy of rows) {
+        for (const cx of cols) {
+          const x = Math.min(Math.max(0, Math.round(cx - cellW / 2)), img.width - cellW);
+          const y = Math.min(Math.max(0, Math.round(cy - cellH / 2)), img.height - cellH);
+          if (x < 0 || y < 0) continue;
+          if (edgeCount(edges, x, y, cellW, cellH) < cellW * cellH * 0.03) continue; // empty slot region
+          cells.push({ x, y, w: cellW, h: cellH });
+        }
+      }
+      if (process.env.CV_DEBUG) console.log("grid:", { cols: cols.map(Math.round), rows: rows.map(Math.round), cells: cells.length });
+      if (cells.length >= 4) {
+        // Drop off-grid hits (e.g. the trainer sprite matching some ball).
+        final = final.filter((h) => cells.some((c) => overlapFrac(h, c) > 0.35));
+        // Fill empty cells with the best relaxed-gate species.
+        for (const cell of cells) {
+          if (final.some((h) => overlapFrac(h, cell) > 0.3)) continue;
+          const filled = classifyCell(cell, prepared, cache, img, o);
+          if (process.env.CV_DEBUG) console.log("cell", JSON.stringify(cell), "→", filled ? `${filled.t.t.id} ${filled.score.toFixed(1)} corr ${filled.corr.toFixed(2)}` : "none");
+          if (filled && !final.some((h) => h.t.t.id === filled.t.t.id)) final.push(filled);
+        }
+      }
+    }
+  }
+
+  return final.map((h) => ({
     id: h.t.t.id,
     name: h.t.t.name,
     score: Math.round(h.score * 10) / 10,
     corr: Math.round(h.corr * 100) / 100,
     source: h.t.source,
+    inferred: h.inferred,
     x: h.x,
     y: h.y,
     w: h.w,
     h: h.h,
   }));
+}
+
+function median(vals: number[]): number {
+  const s = [...vals].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+}
+
+/** Cluster 1D centers into grid positions, then extend the arithmetic
+ * sequence across the image (hits reveal spacing; the grid runs further). */
+function axisPositions(centers: number[], tol: number, limit: number, maxPositions: number): number[] {
+  const sorted = [...centers].sort((a, b) => a - b);
+  const clusters: number[][] = [];
+  for (const c of sorted) {
+    const last = clusters[clusters.length - 1];
+    if (last && c - last[last.length - 1] <= tol) last.push(c);
+    else clusters.push([c]);
+  }
+  let positions = clusters.map((g) => g.reduce((a, b) => a + b, 0) / g.length);
+  if (positions.length >= 2) {
+    const gaps = positions.slice(1).map((p, i) => p - positions[i]);
+    const spacing = median(gaps);
+    if (spacing > tol * 1.5) {
+      // Fill interior gaps that are multiples of the spacing, then extend outward.
+      const filled: number[] = [positions[0]];
+      for (let i = 1; i < positions.length; i++) {
+        const gap = positions[i] - filled[filled.length - 1];
+        const steps = Math.round(gap / spacing);
+        for (let k = 1; k < steps; k++) filled.push(filled[filled.length - 1] + spacing);
+        filled.push(positions[i]);
+      }
+      positions = filled;
+      while (positions.length < maxPositions && positions[0] - spacing > tol) positions.unshift(positions[0] - spacing);
+      while (positions.length < maxPositions && positions[positions.length - 1] + spacing < limit - tol) positions.push(positions[positions.length - 1] + spacing);
+    }
+  }
+  return positions.slice(0, maxPositions);
+}
+
+/** Best species for a slot the grid says must hold a sprite (relaxed gates). */
+function classifyCell(cell: Rect, prepared: Prepared[], cache: WindowCache, img: RGBAImage, o: Required<Omit<ClassifyOptions, "detect" | "debug">>): Scored | null {
+  const cellAr = cell.w / cell.h;
+  const base: { p: Prepared; score: number; corr: number }[] = [];
+  for (const p of prepared) {
+    if (p.t.ar > cellAr * 2 || p.t.ar < cellAr / 2) continue;
+    // Sprites sit at unknown size within the slot — base-rank each template
+    // across a small size ladder (quantized so rects share the cache).
+    let bestR: { score: number; corr: number } | null = null;
+    for (const mul of [0.7, 0.85, 1]) {
+      const w = q4(cell.w * mul);
+      const h = q4(w / p.t.ar);
+      const x = Math.max(0, cell.x + Math.round((cell.w - w) / 2));
+      const y = Math.max(0, cell.y + Math.round((cell.h - h) / 2));
+      if (x + w > img.width || y + h > img.height) continue;
+      const g = cache.get({ x, y, w, h });
+      const fwd = affineScore(p.t, g.win);
+      const rev = affineScore(p.t, g.mir);
+      const r = rev.score < fwd.score ? rev : fwd;
+      if (Number.isFinite(r.score) && (!bestR || r.score - r.corr * 10 < bestR.score - bestR.corr * 10)) bestR = r;
+    }
+    if (bestR) base.push({ p, score: bestR.score, corr: bestR.corr });
+  }
+  // At the (misaligned) cell rect, correlation ranks the right structure
+  // higher than raw score does — refine the union of both top lists.
+  // Cells are few (<=8 per image), so the contender pool can be deep: base
+  // misalignment hides the true template far down the ranking (observed rank
+  // ~130 for a match that refines to score 8 / corr 0.9).
+  const contenders: typeof base = [];
+  const pushTop = (sorted: typeof base) => {
+    let added = 0;
+    for (const b of sorted) {
+      if (contenders.some((c) => c.p.t.id === b.p.t.id)) continue;
+      contenders.push(b);
+      if (++added >= 80) break;
+    }
+  };
+  pushTop([...base].sort((a, b) => a.score - b.score));
+  pushTop([...base].sort((a, b) => b.corr - a.corr));
+  pushTop([...base].filter((b) => !b.p.blob).sort((a, b) => b.corr - a.corr));
+  // Per-set corr rankings too — one artwork set usually dominates a surface,
+  // and cross-set noise can crowd the union lists.
+  for (const src of new Set(base.map((b) => b.p.source))) {
+    pushTop(base.filter((b) => b.p.source === src).sort((a, b) => b.corr - a.corr));
+  }
+  if (process.env.CV_DEBUG) {
+    const byCorr = [...base].sort((a, b) => b.corr - a.corr);
+    for (const id of ["incineroar", "gholdengo", "ninetalesalola"]) {
+      const i = byCorr.findIndex((b) => b.p.t.id === id);
+      if (i >= 0) console.log(`  base rank of ${id}: corr-rank ${i} (corr ${byCorr[i].corr.toFixed(2)}, score ${byCorr[i].score.toFixed(1)}, set ${byCorr[i].p.source})`);
+    }
+  }
+  // Best VALID candidate: correlation is the hard requirement (the slot
+  // demonstrably holds a sprite), then lowest score among those passing.
+  let best: Scored | null = null;
+  for (const c of contenders) {
+    for (const strideFrac of [0.12, 0.06, 0.03]) {
+      for (const mul of [0.68, 0.76, 0.85, 0.94, 1, 1.08]) {
+        const w = Math.round(cell.w * mul);
+        const h = Math.round(w / c.p.t.ar); // window follows the template's aspect
+        const stride = Math.max(1, Math.round(w * strideFrac));
+        for (let dy = -stride; dy <= stride; dy += stride) {
+          for (let dx = -stride; dx <= stride; dx += stride) {
+            const x = cell.x + dx + Math.round((cell.w - w) / 2);
+            const y = cell.y + dy + Math.round((cell.h - h) / 2);
+            if (x < 0 || y < 0 || x + w > img.width || y + h > img.height || w < 14 || h < 14) continue;
+            const win = cache.get({ x, y, w, h });
+            const fwd = affineScore(c.p.t, win.win);
+            const rev = affineScore(c.p.t, win.mir);
+            const r = rev.score < fwd.score ? rev : fwd;
+            if (r.corr < 0.68 || r.score > 40) continue;
+            if (!best || r.score < best.score) best = { x, y, w, h, t: c.p, score: r.score, corr: r.corr, inferred: true };
+          }
+        }
+      }
+    }
+  }
+  if (process.env.CV_DEBUG) console.log("  cell best valid:", best ? `${best.t.t.id} ${best.score.toFixed(1)} corr ${best.corr.toFixed(2)}` : "none");
+  return best;
 }

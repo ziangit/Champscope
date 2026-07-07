@@ -30,12 +30,14 @@ export function ScreenshotInput({ textareaId }: { textareaId: string }) {
         body: JSON.stringify({ image: dataUrl }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`);
-      const result = (await res.json()) as { recognized: boolean; tier: string; species: { name: string }[] };
+      const result = (await res.json()) as { recognized: boolean; tier: string; species: { name: string; inferred: boolean }[] };
       if (!result.recognized) {
         setStatus({ kind: "error", message: "Couldn't recognize a competitive team — upload a screenshot (not a photo or artwork), or type the species instead." });
         return;
       }
-      const names = result.species.map((s) => s.name);
+      // Inferred slots (grid completion, relaxed confidence) get a marker so
+      // the user knows which entries deserve the closest look.
+      const names = result.species.map((s) => (s.inferred ? `${s.name}?` : s.name));
       const textarea = document.getElementById(textareaId) as HTMLTextAreaElement | null;
       if (textarea) textarea.value = names.join(", ");
       setStatus({ kind: "done", tier: result.tier, names });
