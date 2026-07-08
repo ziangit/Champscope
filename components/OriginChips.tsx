@@ -7,12 +7,13 @@ import type { TeamProfileRow } from "@/lib/queries";
  * evidence. Chips are links that set ?origin= while preserving other params.
  */
 
+// Tailwind needs literal class strings, so each chip carries its own pair.
 export const ORIGIN_CHIPS = [
-  { value: "", label: "All" },
-  { value: "ladder", label: "Ladder" },
-  { value: "unrated", label: "Unrated" },
-  { value: "paste", label: "Pastes" },
-  { value: "tournament", label: "Tournament" },
+  { value: "", label: "All", active: "bg-ink text-paper", idle: "border-line text-steel hover:border-ink hover:text-ink" },
+  { value: "ladder", label: "Ladder", active: "bg-accent text-white", idle: "border-accent/40 text-accent hover:border-accent" },
+  { value: "unrated", label: "Unrated", active: "bg-amber-600 text-white", idle: "border-amber-600/40 text-amber-700 hover:border-amber-600" },
+  { value: "paste", label: "Pastes", active: "bg-emerald-600 text-white", idle: "border-emerald-600/40 text-emerald-700 hover:border-emerald-600" },
+  { value: "tournament", label: "Tournament", active: "bg-violet-600 text-white", idle: "border-violet-600/40 text-violet-700 hover:border-violet-600" },
 ] as const;
 
 export type OriginChip = (typeof ORIGIN_CHIPS)[number]["value"];
@@ -53,11 +54,9 @@ export function OriginChips({ path, params, current }: { path: string; params: R
         <Link
           key={c.value}
           href={href(c.value)}
-          className={
-            c.value === current
-              ? "rounded-full bg-accent px-3 py-1 font-display text-xs font-semibold uppercase tracking-wide text-white"
-              : "rounded-full border border-line bg-card px-3 py-1 font-display text-xs font-semibold uppercase tracking-wide text-steel hover:border-steel hover:text-ink"
-          }
+          className={`rounded-full px-3 py-1 font-display text-xs font-semibold uppercase tracking-wide ${
+            c.value === current ? c.active : `border bg-card ${c.idle}`
+          }`}
         >
           {c.label}
         </Link>
