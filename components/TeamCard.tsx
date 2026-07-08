@@ -134,7 +134,7 @@ function SourceRow({ source }: { source: TeamSourceRef }) {
   );
 }
 
-export function TeamCard({ row, showOwner = false, defaultOpen = true }: { row: TeamProfileRow; showOwner?: boolean; defaultOpen?: boolean }) {
+export function TeamCard({ row, showOwner = false, defaultOpen = false }: { row: TeamProfileRow; showOwner?: boolean; defaultOpen?: boolean }) {
   const m = row.merged_reveals;
   const mons = Object.values(m.mons);
   const games = row.wins + row.losses + m.ties;
