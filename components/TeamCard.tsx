@@ -134,7 +134,7 @@ function SourceRow({ source }: { source: TeamSourceRef }) {
   );
 }
 
-export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; showOwner?: boolean }) {
+export function TeamCard({ row, showOwner = false, defaultOpen = true }: { row: TeamProfileRow; showOwner?: boolean; defaultOpen?: boolean }) {
   const m = row.merged_reveals;
   const mons = Object.values(m.mons);
   const games = row.wins + row.losses + m.ties;
@@ -146,8 +146,9 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
   const megas = Object.entries(m.megaSlot ?? {}).sort((a, b) => b[1] - a[1]);
 
   return (
-    <section className="rounded border border-line bg-card">
-      <header className="flex select-none flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-line px-4 py-2">
+    <details data-team-card open={defaultOpen} className="group rounded border border-line bg-card">
+      <summary className="flex cursor-pointer select-none list-none flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-transparent px-4 py-2 group-open:border-line [&::-webkit-details-marker]:hidden">
+        <span className="self-center font-mono text-xs text-steel transition-transform group-open:rotate-90">▶</span>
         {showOwner && (
           <Link href={`/player/${row.user_id}?format=${row.format_id}`} className="font-display text-lg font-semibold uppercase tracking-wide hover:text-accent">
             {m.displayName || row.user_id}
@@ -174,7 +175,7 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
         <span className="text-xs text-steel">
           {new Date(row.first_seen).toISOString().slice(0, 10)} → {new Date(row.last_seen).toISOString().slice(0, 10)}
         </span>
-      </header>
+      </summary>
 
       <div className="grid gap-x-6 md:grid-cols-2">
         <div className="px-4 py-2">
@@ -275,6 +276,6 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
           )}
         </div>
       </div>
-    </section>
+    </details>
   );
 }

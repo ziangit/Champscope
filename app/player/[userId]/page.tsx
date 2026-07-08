@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExpandAllTeams } from "@/components/ExpandAllTeams";
 import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
 import { dbConfigured, listFormats, teamsForPlayer } from "@/lib/queries";
@@ -56,6 +57,11 @@ export default async function PlayerPage({
         </div>
       )}
 
+      {teams.length > 1 && (
+        <div className="flex justify-end">
+          <ExpandAllTeams />
+        </div>
+      )}
       {teams.map((row) => (
         <TeamCard key={row.id} row={row} />
       ))}

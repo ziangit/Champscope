@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { dbConfigured, listFormats, teamsForPlayer } from "@/lib/queries";
+import { ExpandAllTeams } from "@/components/ExpandAllTeams";
 import { chipCounts, chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
 import { SetupNotice } from "@/components/SetupNotice";
 import { TeamCard } from "@/components/TeamCard";
@@ -120,7 +121,12 @@ export default async function ScoutPage({
             Scout finished — {subjects.length} player{subjects.length === 1 ? "" : "s"}, {allTeams.length} team
             {allTeams.length === 1 ? "" : "s"} on file.
           </p>
-          {allTeams.length > 0 && <OriginChips path="/scout" params={{ scouted, format }} current={chip} counts={chipCounts(allTeams)} />}
+          {allTeams.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <OriginChips path="/scout" params={{ scouted, format }} current={chip} counts={chipCounts(allTeams)} />
+              <ExpandAllTeams />
+            </div>
+          )}
           {bySubject.map(({ userId, teams: subjectTeams }) => {
             const shown = filterByChip(subjectTeams, chip);
             return (

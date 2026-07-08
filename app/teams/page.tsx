@@ -1,5 +1,6 @@
 import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
+import { ExpandAllTeams } from "@/components/ExpandAllTeams";
 import { chipCounts, chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
 import { browseTeams, dbConfigured, listFormats } from "@/lib/queries";
 import { toID } from "@/lib/showdown/id";
@@ -46,8 +47,9 @@ export default async function TeamsPage({
             Filter
           </button>
         </form>
-        <div className="w-full">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} counts={chipCounts(allTeams)} />
+          <ExpandAllTeams />
         </div>
       </div>
 
