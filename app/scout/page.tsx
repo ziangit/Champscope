@@ -47,6 +47,11 @@ export default async function ScoutPage({
           No result — that username doesn&apos;t play in the given replay(s).
         </p>
       )}
+      {error === "badreplay" && (
+        <p className="mt-4 rounded border border-accent/40 bg-accent/5 px-3 py-2 text-sm text-accent">
+          Couldn&apos;t fetch that replay — the URL doesn&apos;t point to an existing public replay.
+        </p>
+      )}
 
       <form action={runScout} className="mt-6 space-y-4">
         <label className="block">

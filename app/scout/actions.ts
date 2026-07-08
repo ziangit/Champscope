@@ -50,13 +50,31 @@ export async function runScout(formData: FormData): Promise<void> {
     merge(stats);
   }
 
+  // Which of the given replays actually exist (post-ingest)? A URL that
+  // fetched nothing is a bad link, not a silent no-op.
+  let knownReplays: { p1_user_id: string; p2_user_id: string }[] = [];
+  if (replayIds.length > 0) {
+    const { data } = await db().from("replays").select("p1_user_id, p2_user_id").in("id", replayIds);
+    knownReplays = data ?? [];
+    if (knownReplays.length === 0) {
+      await db().from("scout_runs").insert({
+        ...run,
+        finished_at: new Date().toISOString(),
+        players_checked: 0,
+        replays_found: totals.replaysFound,
+        new_teams: 0,
+        errors: totals.errors,
+      });
+      redirect("/scout?error=badreplay");
+    }
+  }
+
   // Username + replays only make sense together when the username actually
   // plays in those replays — otherwise the combination has no result.
   let mismatch = false;
   if (name && replayIds.length > 0) {
-    const { data } = await db().from("replays").select("p1_user_id, p2_user_id").in("id", replayIds);
     const userId = toID(name);
-    mismatch = !(data ?? []).some((r) => r.p1_user_id === userId || r.p2_user_id === userId);
+    mismatch = !knownReplays.some((r) => r.p1_user_id === userId || r.p2_user_id === userId);
   }
 
   if (name && !mismatch) {
@@ -80,12 +98,8 @@ export async function runScout(formData: FormData): Promise<void> {
   }
   // Replay-only scout: show both players of the given replay(s).
   const subjects: string[] = [];
-  const { data } = await db().from("replays").select("p1_user_id, p2_user_id").in("id", replayIds);
-  for (const r of data ?? []) {
+  for (const r of knownReplays) {
     for (const u of [r.p1_user_id, r.p2_user_id]) if (u && !subjects.includes(u)) subjects.push(u);
   }
-  if (subjects.length > 0) {
-    redirect(`/scout?scouted=${subjects.slice(0, 8).join(",")}&format=${resultFormat}`);
-  }
-  redirect(`/teams?format=${formatId}&scouted=1`);
+  redirect(`/scout?scouted=${subjects.slice(0, 8).join(",")}&format=${resultFormat}`);
 }
