@@ -1,5 +1,6 @@
 import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
+import Link from "next/link";
 import { ExpandAllTeams } from "@/components/ExpandAllTeams";
 import { chipCounts, chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
 import { clampPage, Pager } from "@/components/Pager";
@@ -54,6 +55,15 @@ export default async function TeamsPage({
           <button type="submit" className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:text-ink">
             Filter
           </button>
+          {(species || chip) && (
+            <Link
+              href={formatId ? `/teams?format=${formatId}` : "/teams"}
+              className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:border-accent hover:text-accent"
+              title="Clear species, origin and page filters"
+            >
+              Reset
+            </Link>
+          )}
         </form>
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} counts={chipCounts(allTeams)} />
