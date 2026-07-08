@@ -1,7 +1,6 @@
 # Session handoff
 
-**Current phase:** DEPLOYED. Production: https://champscope.vercel.app (Vercel project `champscope` ← auto-deploys from GitHub `ziangit/Champscope`, Supabase project `amyilzbouobunoegefld`). Watcher runs 12-hourly; team-source ingest (VGCPastes + pokedata.ovh) runs weekly; `/match` looks up previews against all origins.
-**⚠️ Before/at next prod push:** apply `schema.sql` to prod (management API) — local-only additions: `team_profiles.has_rated` generated column + `team_chip_counts()` fn (/teams needs both).
+**Current phase:** DEPLOYED. Production: https://champscope.vercel.app (Vercel project `champscope` ← auto-deploys from GitHub `ziangit/Champscope`, Supabase project `amyilzbouobunoegefld`). Watcher runs 12-hourly; team-source ingest (VGCPastes + pokedata.ovh + MetaVGC featured events) runs weekly; `/match` looks up previews against all origins. Schema incl. `has_rated` + `team_chip_counts()` applied to prod 2026-07-08.
 **Next concrete step:** remaining TEAM-SOURCES items — teamsheet.gg ingest (static-HTML, browser-ish UA) and Smogon-chaos priors (`usage_stats` table + "likely 4th move" hints); optional Tampermonkey userscript feeding /match from the battle DOM.
 
 ## Done so far
