@@ -10,7 +10,7 @@ import { modal, type MergedMon } from "./merge";
 const STAT_NAMES = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"] as const;
 
 /** Packed EV/IV string ",,252,,4,252" -> "252 Def / 4 SpD / 252 Spe". */
-function statsLine(packed: string, defaultVal: number): string | null {
+export function statsLine(packed: string, defaultVal: number): string | null {
   const vals = packed.split(",").map((s) => (s === "" ? defaultVal : Number(s)));
   const parts = vals
     .map((v, i) => (v !== defaultVal ? `${v} ${STAT_NAMES[i]}` : null))

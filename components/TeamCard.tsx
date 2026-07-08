@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- sprites are hotlinked from Showdown by design */
 import Link from "next/link";
-import { exportTeam } from "@/lib/scout/export";
+import { exportTeam, statsLine } from "@/lib/scout/export";
 import { modal, type MergedMon, type TeamSourceRef } from "@/lib/scout/merge";
 import type { TeamProfileRow } from "@/lib/queries";
 import { replayUrl, spriteUrl } from "@/lib/sprites";
@@ -45,6 +45,21 @@ function MonSummary({ mon }: { mon: MergedMon }) {
         {ability && (
           <div title={`Ability — ${ability.source === "sheet" ? "from team sheet" : "revealed in battle"} (seen ${ability.count}×)`}>
             Ability: {ability.name} <span className="text-steel">{sourceMark(ability.source)}</span>
+          </div>
+        )}
+        {mon.evs && statsLine(mon.evs, 0) && (
+          <div title="EVs — from the published team sheet, never inferred">
+            EVs: {statsLine(mon.evs, 0)} <span className="text-steel">●</span>
+          </div>
+        )}
+        {mon.nature && (
+          <div title="Nature — from the published team sheet, never inferred">
+            {mon.nature} Nature <span className="text-steel">●</span>
+          </div>
+        )}
+        {mon.ivs && statsLine(mon.ivs, 31) && (
+          <div title="IVs — from the published team sheet, never inferred">
+            IVs: {statsLine(mon.ivs, 31)} <span className="text-steel">●</span>
           </div>
         )}
         {set.map((m) => (
