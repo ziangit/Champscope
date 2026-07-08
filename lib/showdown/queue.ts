@@ -14,7 +14,7 @@ const MAX_ATTEMPTS = 3;
 const BACKOFF_BASE_MS = 1500;
 
 const USER_AGENT = `Champscope/0.1 (VGC replay scouter, personal non-commercial project; contact: ${
-  process.env.SHOWDOWN_CONTACT ?? "megazchomp@gmail.com"
+  process.env.SHOWDOWN_CONTACT ?? "contact-unset@example.com"
 })`;
 
 export class ShowdownFetchError extends Error {
