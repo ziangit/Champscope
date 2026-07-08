@@ -12,6 +12,11 @@ const PAGES = [
     body: "Browse every team on file. Filter by species to find who runs what.",
   },
   {
+    href: "/match",
+    title: "Match",
+    body: "Paste or screenshot an opponent's team preview and find it — exact rosters and 4+ overlaps, tournament teams first.",
+  },
+  {
     href: "/watch",
     title: "Watch",
     body: "The ladder watcher's daily digest: top-50 snapshots, new finds, and alt suggestions.",
@@ -28,7 +33,7 @@ export default function Home() {
         VGC-first replay scouting for the Pokémon Champions ladder: lead pairs, bring-4 patterns, Mega usage, and
         merged sets rebuilt from every public replay a player leaves behind.
       </p>
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PAGES.map((p) => (
           <Link key={p.href} href={p.href} className="rounded border border-line bg-card p-4 hover:border-steel">
             <h2 className="font-display text-xl font-semibold uppercase tracking-wide">{p.title}</h2>
