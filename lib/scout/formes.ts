@@ -9,7 +9,7 @@ import { toID } from "../showdown/id";
  * teambuilder formes like Rotom-Wash or Lycanroc-Dusk are distinct team
  * choices and must NOT be normalized away.
  */
-const BATTLE_FORME_SUFFIX = /-(Mega(-[XY])?|Primal|Gmax|Terastal|Stellar|Eternamax|Complete|Ultra)$/;
+export const BATTLE_FORME_SUFFIX = /-(Mega(-[XY])?|Primal|Gmax|Terastal|Stellar|Eternamax|Complete|Ultra)$/;
 
 export function baseFormeId(species: string): string {
   return toID(species.replace(BATTLE_FORME_SUFFIX, ""));

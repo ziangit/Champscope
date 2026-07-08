@@ -1,4 +1,11 @@
+import gen5 from "@/data/cv/gen5.json";
+import { BATTLE_FORME_SUFFIX } from "./scout/formes";
 import { toID } from "./showdown/id";
+
+/** Species ids that actually have a gen5 sprite on Showdown (derived from the
+ * CV template inventory — same fetch source). Champions-exclusive formes
+ * (Raichu-Mega-Y, Floette-Mega, …) are absent and fall back to base artwork. */
+const KNOWN_SPRITES = new Set((gen5 as { templates: { id: string }[] }).templates.map((t) => t.id));
 
 /**
  * Hotlinked Showdown sprite URLs (we bundle no Pokémon assets).
@@ -29,7 +36,12 @@ export function spriteId(species: string): string {
 }
 
 export function spriteUrl(species: string): string {
-  return `https://play.pokemonshowdown.com/sprites/gen5/${spriteId(species)}.png`;
+  let name = species;
+  if (!KNOWN_SPRITES.has(toID(name))) {
+    const base = name.replace(BATTLE_FORME_SUFFIX, "");
+    if (KNOWN_SPRITES.has(toID(base))) name = base;
+  }
+  return `https://play.pokemonshowdown.com/sprites/gen5/${spriteId(name)}.png`;
 }
 
 export function replayUrl(replayId: string): string {
