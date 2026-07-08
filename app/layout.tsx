@@ -19,7 +19,9 @@ export const metadata: Metadata = {
   title: "Champscope",
   description: "VGC-first Pokémon Showdown replay scouting for the Champions era",
   // Hotlinked from the official Showdown client (we bundle no Pokémon assets).
-  icons: { icon: "https://play.pokemonshowdown.com/sprites/gen5/floette.png" },
+  // gen6 over gen5: Floette fills 85% of that canvas vs 25%, so the tab icon
+  // reads at 16px instead of vanishing.
+  icons: { icon: "https://play.pokemonshowdown.com/sprites/gen6/floette.png" },
 };
 
 const NAV = [
