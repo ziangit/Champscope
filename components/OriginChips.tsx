@@ -7,13 +7,13 @@ import type { TeamProfileRow } from "@/lib/queries";
  * evidence. Chips are links that set ?origin= while preserving other params.
  */
 
-// Tailwind needs literal class strings, so each chip carries its own pair.
+// Tailwind needs literal class strings, so each chip carries its own set.
 export const ORIGIN_CHIPS = [
-  { value: "", label: "All", active: "bg-ink text-paper", idle: "border-line text-steel hover:border-ink hover:text-ink" },
-  { value: "ladder", label: "Ladder", active: "bg-accent text-white", idle: "border-accent/40 text-accent hover:border-accent" },
-  { value: "unrated", label: "Unrated", active: "bg-amber-600 text-white", idle: "border-amber-600/40 text-amber-700 hover:border-amber-600" },
-  { value: "paste", label: "Pastes", active: "bg-emerald-600 text-white", idle: "border-emerald-600/40 text-emerald-700 hover:border-emerald-600" },
-  { value: "tournament", label: "Tournament", active: "bg-violet-600 text-white", idle: "border-violet-600/40 text-violet-700 hover:border-violet-600" },
+  { value: "", label: "All", dot: "bg-ink", active: "bg-ink text-paper shadow-sm" },
+  { value: "ladder", label: "Ladder", dot: "bg-accent", active: "bg-accent text-white shadow-sm" },
+  { value: "unrated", label: "Unrated", dot: "bg-amber-500", active: "bg-amber-600 text-white shadow-sm" },
+  { value: "paste", label: "Pastes", dot: "bg-emerald-500", active: "bg-emerald-600 text-white shadow-sm" },
+  { value: "tournament", label: "Tournament", dot: "bg-violet-500", active: "bg-violet-600 text-white shadow-sm" },
 ] as const;
 
 export type OriginChip = (typeof ORIGIN_CHIPS)[number]["value"];
@@ -39,7 +39,24 @@ export function filterByChip(teams: TeamProfileRow[], chip: OriginChip): TeamPro
   }
 }
 
-export function OriginChips({ path, params, current }: { path: string; params: Record<string, string | undefined>; current: OriginChip }) {
+/** Per-chip team counts over an unfiltered list. */
+export function chipCounts(teams: TeamProfileRow[]): Record<OriginChip, number> {
+  const counts = {} as Record<OriginChip, number>;
+  for (const c of ORIGIN_CHIPS) counts[c.value] = filterByChip(teams, c.value).length;
+  return counts;
+}
+
+export function OriginChips({
+  path,
+  params,
+  current,
+  counts,
+}: {
+  path: string;
+  params: Record<string, string | undefined>;
+  current: OriginChip;
+  counts?: Record<OriginChip, number>;
+}) {
   const href = (value: OriginChip) => {
     const q = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) if (v) q.set(k, v);
@@ -49,18 +66,25 @@ export function OriginChips({ path, params, current }: { path: string; params: R
     return qs ? `${path}?${qs}` : path;
   };
   return (
-    <div className="flex flex-wrap gap-2">
-      {ORIGIN_CHIPS.map((c) => (
-        <Link
-          key={c.value}
-          href={href(c.value)}
-          className={`rounded-full px-3 py-1 font-display text-xs font-semibold uppercase tracking-wide ${
-            c.value === current ? c.active : `border bg-card ${c.idle}`
-          }`}
-        >
-          {c.label}
-        </Link>
-      ))}
+    <div className="flex flex-wrap gap-1.5">
+      {ORIGIN_CHIPS.map((c) => {
+        const active = c.value === current;
+        return (
+          <Link
+            key={c.value}
+            href={href(c.value)}
+            className={`inline-flex select-none items-center gap-1.5 rounded-full px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide transition-colors ${
+              active ? c.active : "border border-line bg-card text-ink/80 hover:border-steel hover:bg-paper"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-white/80" : c.dot}`} />
+            {c.label}
+            {counts && (
+              <span className={`font-mono text-[10px] font-normal tabular-nums ${active ? "text-white/75" : "text-steel"}`}>{counts[c.value]}</span>
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 }

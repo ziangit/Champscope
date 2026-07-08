@@ -1,7 +1,7 @@
 import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
-import { chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
-import { browseTeams, dbConfigured, listFormats, type TeamOrigin } from "@/lib/queries";
+import { chipCounts, chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
+import { browseTeams, dbConfigured, listFormats } from "@/lib/queries";
 import { toID } from "@/lib/showdown/id";
 
 export const dynamic = "force-dynamic";
@@ -17,9 +17,10 @@ export default async function TeamsPage({
   const formats = await listFormats();
   const formatId = format ?? formats.find((f) => f.active)?.id;
   const chip = chipValue(origin);
-  const originFilter: TeamOrigin | undefined =
-    chip === "ladder" || chip === "unrated" ? "replay" : chip === "paste" ? "paste" : chip === "tournament" ? "tournament" : undefined;
-  const teams = filterByChip(await browseTeams({ formatId, species: species ? toID(species) : undefined, origin: originFilter }), chip);
+  // Fetch unfiltered so every chip can show its count; the chip filter
+  // applies in memory over the same window.
+  const allTeams = await browseTeams({ formatId, species: species ? toID(species) : undefined });
+  const teams = filterByChip(allTeams, chip);
 
   return (
     <div className="space-y-6">
@@ -46,7 +47,7 @@ export default async function TeamsPage({
           </button>
         </form>
         <div className="w-full">
-          <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} />
+          <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} counts={chipCounts(allTeams)} />
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { dbConfigured, listFormats, teamsForPlayer } from "@/lib/queries";
-import { chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
+import { chipCounts, chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
 import { SetupNotice } from "@/components/SetupNotice";
 import { TeamCard } from "@/components/TeamCard";
 import { runScout } from "./actions";
@@ -109,7 +109,7 @@ export default async function ScoutPage({
               "No public replays found for this player — recorded, not an error."
             )}
           </p>
-          {allTeams.length > 0 && <OriginChips path="/scout" params={{ scouted, format }} current={chip} />}
+          {allTeams.length > 0 && <OriginChips path="/scout" params={{ scouted, format }} current={chip} counts={chipCounts(allTeams)} />}
           {chip && teams.length === 0 && <p className="text-sm text-steel">No teams match this filter.</p>}
           {teams.map((row) => (
             <TeamCard key={row.id} row={row} />

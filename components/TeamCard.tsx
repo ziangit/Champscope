@@ -92,14 +92,17 @@ const ORIGIN_TITLE = {
   tournament: "Imported from an officially published open team sheet",
 } as const;
 
-/** Badge text: the named provider when there is one, otherwise the origin.
- * Replay teams whose games were all unrated are not ladder evidence. */
-function originBadge(origin: "replay" | "paste" | "tournament", sources: TeamSourceRef[], hasRated: boolean): { label: string; title: string } {
+/** Badge text + color (matching the filter chips): the named provider when
+ * there is one, otherwise the origin. Replay teams whose games were all
+ * unrated are not ladder evidence. */
+function originBadge(origin: "replay" | "paste" | "tournament", sources: TeamSourceRef[], hasRated: boolean): { label: string; title: string; className: string } {
   if (origin === "replay") {
-    return hasRated ? { label: "ladder", title: ORIGIN_TITLE.replay } : { label: "unrated", title: ORIGIN_TITLE.unrated };
+    return hasRated
+      ? { label: "ladder", title: ORIGIN_TITLE.replay, className: "bg-accent/10 text-accent" }
+      : { label: "unrated", title: ORIGIN_TITLE.unrated, className: "bg-amber-600/10 text-amber-700" };
   }
-  if (origin === "tournament") return { label: "official tournament", title: ORIGIN_TITLE.tournament };
-  return { label: sources[0]?.provider ?? "community paste", title: ORIGIN_TITLE.paste };
+  if (origin === "tournament") return { label: "official tournament", title: ORIGIN_TITLE.tournament, className: "bg-violet-600/10 text-violet-700" };
+  return { label: sources[0]?.provider ?? "community paste", title: ORIGIN_TITLE.paste, className: "bg-emerald-600/10 text-emerald-700" };
 }
 
 function SourceRow({ source }: { source: TeamSourceRef }) {
@@ -150,7 +153,7 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
             {m.displayName || row.user_id}
           </Link>
         )}
-        <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-accent" title={originBadge(origin, sources, hasRated).title}>
+        <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] uppercase ${originBadge(origin, sources, hasRated).className}`} title={originBadge(origin, sources, hasRated).title}>
           {originBadge(origin, sources, hasRated).label}
         </span>
         {origin !== "replay" && (
