@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
 import Link from "next/link";
@@ -60,6 +61,7 @@ export default function RootLayout({
         <footer className="border-t border-line px-4 py-3 text-center text-xs text-steel">
           Unaffiliated, non-commercial fan project. Sprites served by Pokémon Showdown.
         </footer>
+        <Analytics />
       </body>
     </html>
   );
