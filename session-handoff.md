@@ -1,6 +1,6 @@
 # Session handoff
 
-**Current phase:** DEPLOYED. Production: https://champscope.vercel.app (Vercel project `champscope` ← auto-deploys from GitHub `ziangit/Champscope`, Supabase project `amyilzbouobunoegefld`). Watcher runs 12-hourly; team-source ingest (VGCPastes + pokedata.ovh + MetaVGC featured events) runs weekly; `/match` looks up previews against all origins. Schema incl. `has_rated` + `team_chip_counts()` applied to prod 2026-07-08.
+**Current phase:** DEPLOYED. Production: https://champscope.vercel.app (Vercel project `champscope` ← auto-deploys from GitHub `ziangit/Champscope`, Supabase project `amyilzbouobunoegefld`). All jobs run daily (unified 2026-07-08): watcher 06:15 UTC, team-source ingest (VGCPastes + pokedata.ovh + MetaVGC) 06:45 UTC, Vercel watch fallback 06:00 UTC; `/match` looks up previews against all origins. Schema incl. `has_rated` + `team_chip_counts()` applied to prod 2026-07-08.
 **Next concrete step:** remaining TEAM-SOURCES items — teamsheet.gg ingest (static-HTML, browser-ish UA) and Smogon-chaos priors (`usage_stats` table + "likely 4th move" hints); optional Tampermonkey userscript feeding /match from the battle DOM.
 
 ## Done so far
@@ -10,7 +10,7 @@
 - Parser (`lib/scout/parse.ts`): log → `ParsedReplay`; 5 real Reg M-B fixtures snapshot-tested + hand-checked; synthetic tests for tie/showteam/Trick/Trace/Metronome edge cases.
 - Merge layer (`lib/scout/merge.ts`, `formes.ts`): base-forme fingerprints, frequency-counted reveals with provenance, lead pairs / bring-4, replay refs with ratings, set-variation flag, alt correlation.
 - Phase 1 UI: `/scout`, `/player/[userId]`, `/teams`; Pokepaste-style team cards (top-4 moves as the set, 5th+ under "also seen", per-replay `Rating: N`), copyable export capped at 4 moves for teambuilder round-trip.
-- Phase 2: `lib/watch.ts` chunked worker (cursor in `scout_runs.cursor`, ~7 s budget, **11 h pass cooldown**), bearer-authed `/api/watch/run`, GH Actions scheduler fires **every 12 h** and drives a full pass per run (~3.5 min), `/watch` dashboard.
+- Phase 2: `lib/watch.ts` chunked worker (cursor in `scout_runs.cursor`, ~7 s budget, **11 h pass cooldown**), bearer-authed `/api/watch/run`, GH Actions scheduler fires **daily 06:15 UTC** and drives a full pass per run (~3.5 min), `/watch` dashboard.
 - `npm run reparse`: re-parses cached `raw_json` on `PARSER_VERSION` bump and rebuilds all team profiles from scratch (also migrates profile-shape changes).
 - Local test rig: `supabase start` + `.env.local`; `npx tsx scripts/dev-scout.ts <user>` for CLI scouts. Local DB has its own harvest, independent of prod.
 - Tests: 18 passing (`npm test`); `next build` clean.

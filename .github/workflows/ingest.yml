@@ -1,5 +1,5 @@
 # Scheduler for the team-source ingest (VGCPastes + pokedata.ovh): fires
-# weekly and drives the chunked worker route until every source reports
+# daily and drives the chunked worker route until every source reports
 # cooldown. "finished" only ends one source's pass — keep looping so the next
 # source starts. Everything is idempotent per source key; a re-run is cheap.
 #
@@ -9,7 +9,7 @@
 name: team-ingest
 on:
   schedule:
-    - cron: "30 6 * * 1"
+    - cron: "45 6 * * *"
   workflow_dispatch: {}
 
 jobs:

@@ -1,4 +1,4 @@
-# Scheduler for the ladder watcher: fires every 12 hours and drives the
+# Scheduler for the ladder watcher: fires daily and drives the
 # chunked worker route until the pass completes. Each hit does ~7 s of work
 # within Vercel Hobby's 10 s limit and persists a cursor; a full top-50 pass
 # is ~20-40 hits. Vercel Cron (vercel.json) stays as a once-daily fallback.
@@ -9,7 +9,7 @@
 name: ladder-watch
 on:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "15 6 * * *"
   workflow_dispatch: {}
 
 jobs:

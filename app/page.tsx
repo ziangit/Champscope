@@ -12,7 +12,7 @@ const PAGES = [
 ] as const;
 
 const SOURCES = [
-  { title: "Ladder replays", dot: "bg-accent", body: "top 50 watched every 12 h, battle-revealed data only" },
+  { title: "Ladder replays", dot: "bg-accent", body: "top 50 watched daily, battle-revealed data only" },
   { title: "VGCPastes", dot: "bg-emerald-500", body: "community pastes with full EVs and replica codes" },
   { title: "Official tournaments", dot: "bg-violet-500", body: "RK9 open team sheets with placings" },
   { title: "Community majors", dot: "bg-violet-500", body: "featured events like the Champions Arena" },

@@ -6,7 +6,7 @@
 >
 > **Status:** the shared foundation, VGCPastes, pokedata.ovh, and /match shipped
 > 2026-07-06 (`lib/scout/import.ts`, `lib/sources/`, `lib/match.ts`,
-> `/api/ingest/run` + `.github/workflows/ingest.yml` weekly). teamsheet.gg (§3)
+> `/api/ingest/run` + `.github/workflows/ingest.yml` daily). teamsheet.gg (§3)
 > and Smogon chaos (§4) remain future work.
 
 ## The shared foundation (IMPLEMENTED)
@@ -31,7 +31,7 @@ fingerprint space:
 
 All sources funnel through it. Ingest jobs share the per-host polite queue
 (Showdown keeps its own single global lane) and run as a chunked cursor-resumable
-worker (`/api/ingest/run`, weekly GH Actions `team-ingest`, 20 h pass cooldown).
+worker (`/api/ingest/run`, daily GH Actions `team-ingest`, 20 h pass cooldown).
 
 ## Sources, in quality order
 
