@@ -89,7 +89,7 @@ function SourceRow({ source }: { source: TeamSourceRef }) {
         <a href={source.url} target="_blank" rel="noreferrer" className="underline hover:text-accent">
           {source.provider ?? (source.kind === "paste" ? "paste" : "tournament sheet")}
         </a>
-        {source.event && <span className="text-steel"> — {source.event}</span>}
+        {(source.event || source.creator) && <span className="text-steel"> — {source.event ?? `by ${source.creator}`}</span>}
         {source.link && (
           <a href={source.link} target="_blank" rel="noreferrer" className="ml-1 text-steel underline hover:text-ink" title="Where the team was originally shared">
             ↗
@@ -131,6 +131,11 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
         <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-accent" title={ORIGIN_TITLE[origin]}>
           {originBadge(origin, sources)}
         </span>
+        {origin !== "replay" && (
+          <span className="max-w-56 truncate font-display text-sm font-semibold uppercase tracking-wide" title={sources.find((s) => s.event)?.event ?? sources[0]?.creator}>
+            {sources.find((s) => s.event)?.event ?? sources[0]?.creator ?? ""}
+          </span>
+        )}
         <span className="font-mono text-xs text-steel" title="Team fingerprint: SHA-1 of the sorted base-forme species ids">
           sheet {row.fingerprint.slice(0, 8)}
         </span>

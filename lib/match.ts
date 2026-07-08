@@ -30,13 +30,24 @@ export interface PartialMatch {
 export interface MatchResult {
   /** Normalized base-forme ids actually queried. */
   queryIds: string[];
+  /** Display names for the query ids (for sprites/labels), same order. */
+  queryNames: string[];
   exact: TeamProfileRow[];
   partial: PartialMatch[];
 }
 
+/** Official tournament teams rank above ladder/paste teams at equal footing. */
+const originRank = (origin: string | undefined) => (origin === "tournament" ? 0 : 1);
+
 export async function matchTeams(formatId: string, speciesNames: string[], limit = 40): Promise<MatchResult> {
-  const queryIds = [...new Set(speciesNames.map(baseFormeId).filter(Boolean))].sort();
-  if (queryIds.length < 2) return { queryIds, exact: [], partial: [] };
+  const byId = new Map<string, string>();
+  for (const name of speciesNames) {
+    const id = baseFormeId(name);
+    if (id && !byId.has(id)) byId.set(id, name.trim());
+  }
+  const queryIds = [...byId.keys()].sort();
+  const queryNames = queryIds.map((id) => byId.get(id)!);
+  if (queryIds.length < 2) return { queryIds, queryNames, exact: [], partial: [] };
 
   let exact: TeamProfileRow[] = [];
   if (queryIds.length === 6) {
@@ -47,7 +58,9 @@ export async function matchTeams(formatId: string, speciesNames: string[], limit
       .eq("fingerprint", teamFingerprint(queryIds))
       .order("last_seen", { ascending: false });
     if (error) throw new Error(`exact match query failed: ${error.message}`);
-    exact = data ?? [];
+    exact = (data ?? []).sort(
+      (a: TeamProfileRow, b: TeamProfileRow) => originRank(a.origin) - originRank(b.origin) || new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime(),
+    );
   }
 
   // With fewer than 6 previewed species, still require >= 4 shared (or all of
@@ -63,7 +76,13 @@ export async function matchTeams(formatId: string, speciesNames: string[], limit
   const exactIds = new Set(exact.map((r) => r.id));
   const partial = ((data ?? []) as { overlap: number; profile: TeamProfileRow }[])
     .filter((r) => !exactIds.has(r.profile.id))
+    .sort(
+      (a, b) =>
+        b.overlap - a.overlap ||
+        originRank(a.profile.origin) - originRank(b.profile.origin) ||
+        new Date(b.profile.last_seen).getTime() - new Date(a.profile.last_seen).getTime(),
+    )
     .slice(0, limit);
 
-  return { queryIds, exact, partial };
+  return { queryIds, queryNames, exact, partial };
 }
