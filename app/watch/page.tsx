@@ -2,7 +2,6 @@ import Link from "next/link";
 import { SetupNotice } from "@/components/SetupNotice";
 import { db } from "@/lib/db";
 import { browseTeams, dbConfigured, listFormats } from "@/lib/queries";
-import { correlateAlts } from "@/lib/scout/merge";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +36,6 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
   const profiles = (allProfiles ?? []) as { user_id: string; format_id: string; fingerprint: string }[];
   const trackedUsers = new Set(profiles.map((p) => p.user_id));
   const covered = current.filter((s) => trackedUsers.has(s.user_id));
-  const alts = correlateAlts(profiles.map((p) => ({ userId: p.user_id, formatId: p.format_id, fingerprint: p.fingerprint })));
 
   return (
     <div className="space-y-8">
@@ -52,7 +50,7 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
         </nav>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded border border-line bg-card p-4">
           <h2 className="font-display font-semibold uppercase tracking-wide text-steel">Last pass</h2>
           {lastRun ? (
@@ -80,26 +78,6 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
           <p className="mt-1 text-xs text-steel">Most top players never upload replays — sparse coverage is expected; the watcher harvests the rare public exposure.</p>
         </div>
 
-        <div className="rounded border border-line bg-card p-4">
-          <h2 className="font-display font-semibold uppercase tracking-wide text-steel">Alt suggestions</h2>
-          {alts.length === 0 ? (
-            <p className="mt-1 text-sm text-steel">No identical team fingerprints under different names yet.</p>
-          ) : (
-            <ul className="mt-1 space-y-1 text-sm">
-              {alts.slice(0, 6).map((a) => (
-                <li key={a.fingerprint}>
-                  {a.userIds.map((u, i) => (
-                    <span key={u}>
-                      {i > 0 && " ≈ "}
-                      <Link href={`/player/${u}?format=${formatId}`} className="underline hover:text-accent">{u}</Link>
-                    </span>
-                  ))}
-                  <span className="ml-1 font-mono text-xs text-steel" title="Same team fingerprint — possibly the same player; never asserted as fact">?</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
