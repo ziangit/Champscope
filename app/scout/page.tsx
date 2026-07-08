@@ -18,7 +18,8 @@ export default async function ScoutPage({
   const teams = scouted ? await teamsForPlayer(scouted, format) : [];
 
   return (
-    <div className="max-w-4xl">
+    <div>
+      <div className="max-w-2xl">
       <h1 className="font-display text-3xl font-bold uppercase tracking-wide">Scout a player</h1>
       <p className="mt-1 text-sm text-steel">
         Searches public replays, parses every new game, and files the teams. Already-cached replays are never
@@ -37,7 +38,7 @@ export default async function ScoutPage({
           <textarea
             name="names"
             rows={2}
-            placeholder={"one per line or comma-separated, e.g.\ntrickroomfan99"}
+            placeholder="one per line or comma-separated"
             className="mt-1 w-full rounded border border-line bg-card px-3 py-2 font-mono text-sm focus-visible:outline-2 focus-visible:outline-accent"
           />
         </label>
@@ -87,6 +88,7 @@ export default async function ScoutPage({
           Requests go through a polite serial queue (~0.6 s each) — scouting a busy player takes a moment.
         </p>
       </form>
+      </div>
 
       {scouted && (
         <section className="mt-8 space-y-4">

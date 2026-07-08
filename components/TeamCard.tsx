@@ -174,10 +174,11 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
       </header>
 
       <div className="grid gap-x-6 md:grid-cols-2">
-        <div className="relative px-4 py-2">
-          <span className="absolute right-2 top-2 z-10 select-none">
+        <div className="px-4 py-2">
+          <div className="flex select-none items-center justify-between border-b border-line pb-2 pt-1">
+            <span className="font-display text-xs font-semibold uppercase tracking-wide text-steel">Sets</span>
             <CopyButton text={exportTeam(mons)} />
-          </span>
+          </div>
           {mons.map((mon) => (
             <MonSummary key={mon.speciesId} mon={mon} />
           ))}
