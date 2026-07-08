@@ -86,16 +86,20 @@ function MonSummary({ mon }: { mon: MergedMon }) {
 }
 
 const ORIGIN_TITLE = {
-  replay: "Observed in public ladder replays",
+  replay: "Observed in rated public ladder replays",
+  unrated: "Observed only in unrated public replays (challenge/tour games, not ladder)",
   paste: "Imported from a shared paste — sets are as published, not battle-observed",
   tournament: "Imported from an officially published open team sheet",
 } as const;
 
-/** Badge text: the named provider when there is one, otherwise the origin. */
-function originBadge(origin: keyof typeof ORIGIN_TITLE, sources: TeamSourceRef[]): string {
-  if (origin === "replay") return "ladder";
-  if (origin === "tournament") return "official tournament";
-  return sources[0]?.provider ?? "community paste";
+/** Badge text: the named provider when there is one, otherwise the origin.
+ * Replay teams whose games were all unrated are not ladder evidence. */
+function originBadge(origin: "replay" | "paste" | "tournament", sources: TeamSourceRef[], hasRated: boolean): { label: string; title: string } {
+  if (origin === "replay") {
+    return hasRated ? { label: "ladder", title: ORIGIN_TITLE.replay } : { label: "unrated", title: ORIGIN_TITLE.unrated };
+  }
+  if (origin === "tournament") return { label: "official tournament", title: ORIGIN_TITLE.tournament };
+  return { label: sources[0]?.provider ?? "community paste", title: ORIGIN_TITLE.paste };
 }
 
 function SourceRow({ source }: { source: TeamSourceRef }) {
@@ -133,6 +137,7 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
   const games = row.wins + row.losses + m.ties;
   const origin = row.origin ?? "replay";
   const sources = row.sources ?? [];
+  const hasRated = (m.replays ?? []).some((r) => r.rating !== null);
   const leadPairs = Object.entries(row.lead_pairs).sort((a, b) => b[1] - a[1]);
   const brings = Object.entries(row.brings).sort((a, b) => b[1] - a[1]);
   const megas = Object.entries(m.megaSlot ?? {}).sort((a, b) => b[1] - a[1]);
@@ -145,8 +150,8 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
             {m.displayName || row.user_id}
           </Link>
         )}
-        <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-accent" title={ORIGIN_TITLE[origin]}>
-          {originBadge(origin, sources)}
+        <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-accent" title={originBadge(origin, sources, hasRated).title}>
+          {originBadge(origin, sources, hasRated).label}
         </span>
         {origin !== "replay" && (
           <span className="max-w-56 truncate font-display text-sm font-semibold uppercase tracking-wide" title={sources.find((s) => s.event)?.event ?? sources[0]?.creator}>
@@ -166,13 +171,13 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
         <span className="text-xs text-steel">
           {new Date(row.first_seen).toISOString().slice(0, 10)} → {new Date(row.last_seen).toISOString().slice(0, 10)}
         </span>
-        <span className="ml-auto">
-          <CopyButton text={exportTeam(mons)} />
-        </span>
       </header>
 
       <div className="grid gap-x-6 md:grid-cols-2">
-        <div className="px-4 py-2">
+        <div className="relative px-4 py-2">
+          <span className="absolute right-2 top-2 z-10 select-none">
+            <CopyButton text={exportTeam(mons)} />
+          </span>
           {mons.map((mon) => (
             <MonSummary key={mon.speciesId} mon={mon} />
           ))}
