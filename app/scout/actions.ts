@@ -59,18 +59,16 @@ export async function runScout(formData: FormData): Promise<void> {
     errors: totals.errors,
   });
 
+  // Results render on /scout itself, below the form — the search stays on top.
   if (names.length > 0) {
-    redirect(`/player/${toID(names[0])}?format=${formatId}&scouted=1`);
+    redirect(`/scout?scouted=${toID(names[0])}&format=${formatId}`);
   }
-  // URL-only scout: land on the replay's first player so the freshly filed
-  // team is what you see (the generic /teams list sorts by last_seen and can
-  // bury an older replay's teams — which reads as "nothing happened").
+  // URL-only scout: show the replay's first player. The replay id embeds its
+  // true format ("gen9...regmb-2641873828"), which may differ from the dropdown.
   if (replayIds.length > 0) {
     const { data } = await db().from("replays").select("p1_user_id").eq("id", replayIds[0]).maybeSingle();
-    // The replay id embeds its true format ("gen9...regmb-2641873828"),
-    // which may differ from the form's dropdown.
     const replayFormat = replayIds[0].replace(/-\d+$/, "");
-    if (data?.p1_user_id) redirect(`/player/${data.p1_user_id}?format=${replayFormat}&scouted=1`);
+    if (data?.p1_user_id) redirect(`/scout?scouted=${data.p1_user_id}&format=${replayFormat}`);
   }
   redirect(`/teams?format=${formatId}&scouted=1`);
 }

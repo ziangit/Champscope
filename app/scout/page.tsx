@@ -1,5 +1,7 @@
-import { dbConfigured, listFormats } from "@/lib/queries";
+import Link from "next/link";
+import { dbConfigured, listFormats, teamsForPlayer } from "@/lib/queries";
 import { SetupNotice } from "@/components/SetupNotice";
+import { TeamCard } from "@/components/TeamCard";
 import { runScout } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -7,14 +9,16 @@ export const dynamic = "force-dynamic";
 export default async function ScoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; scouted?: string; format?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, scouted, format } = await searchParams;
   if (!dbConfigured()) return <SetupNotice />;
   const formats = await listFormats();
+  // Results render below the form — the form always stays on top.
+  const teams = scouted ? await teamsForPlayer(scouted, format) : [];
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <h1 className="font-display text-3xl font-bold uppercase tracking-wide">Scout a player</h1>
       <p className="mt-1 text-sm text-steel">
         Searches public replays, parses every new game, and files the teams. Already-cached replays are never
@@ -33,7 +37,7 @@ export default async function ScoutPage({
           <textarea
             name="names"
             rows={2}
-            placeholder={"one per line or comma-separated, e.g.\nYOASOBI stan"}
+            placeholder={"one per line or comma-separated, e.g.\ntrickroomfan99"}
             className="mt-1 w-full rounded border border-line bg-card px-3 py-2 font-mono text-sm focus-visible:outline-2 focus-visible:outline-accent"
           />
         </label>
@@ -83,6 +87,28 @@ export default async function ScoutPage({
           Requests go through a polite serial queue (~0.6 s each) — scouting a busy player takes a moment.
         </p>
       </form>
+
+      {scouted && (
+        <section className="mt-8 space-y-4">
+          <p className="rounded border border-win/40 bg-win/5 px-3 py-2 text-sm text-win">
+            Scout finished.{" "}
+            {teams.length > 0 ? (
+              <>
+                {teams.length} team{teams.length === 1 ? "" : "s"} on file for{" "}
+                <Link href={`/player/${scouted}${format ? `?format=${format}` : ""}`} className="underline">
+                  {teams[0]?.merged_reveals.displayName ?? scouted}
+                </Link>
+                .
+              </>
+            ) : (
+              "No public replays found for this player — recorded, not an error."
+            )}
+          </p>
+          {teams.map((row) => (
+            <TeamCard key={row.id} row={row} />
+          ))}
+        </section>
+      )}
     </div>
   );
 }
