@@ -62,5 +62,15 @@ export async function runScout(formData: FormData): Promise<void> {
   if (names.length > 0) {
     redirect(`/player/${toID(names[0])}?format=${formatId}&scouted=1`);
   }
+  // URL-only scout: land on the replay's first player so the freshly filed
+  // team is what you see (the generic /teams list sorts by last_seen and can
+  // bury an older replay's teams — which reads as "nothing happened").
+  if (replayIds.length > 0) {
+    const { data } = await db().from("replays").select("p1_user_id").eq("id", replayIds[0]).maybeSingle();
+    // The replay id embeds its true format ("gen9...regmb-2641873828"),
+    // which may differ from the form's dropdown.
+    const replayFormat = replayIds[0].replace(/-\d+$/, "");
+    if (data?.p1_user_id) redirect(`/player/${data.p1_user_id}?format=${replayFormat}&scouted=1`);
+  }
   redirect(`/teams?format=${formatId}&scouted=1`);
 }
