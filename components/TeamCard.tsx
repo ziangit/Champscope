@@ -106,35 +106,36 @@ function originBadge(origin: "replay" | "paste" | "tournament", sources: TeamSou
 }
 
 function SourceRow({ source }: { source: TeamSourceRef }) {
-  const record = source.record ? `${source.record.wins}-${source.record.losses}${source.record.ties ? `-${source.record.ties}` : ""}` : null;
+  const record = source.record ? ` (${source.record.wins}-${source.record.losses}${source.record.ties ? `-${source.record.ties}` : ""})` : "";
   return (
-    <div className="border-t border-line py-1.5 first:border-t-0 first:pt-0">
+    <div className="rounded border border-line bg-paper px-3 py-2">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <a href={source.url} target="_blank" rel="noreferrer" className="whitespace-nowrap underline hover:text-accent">
+        <a href={source.url} target="_blank" rel="noreferrer" className="whitespace-nowrap font-semibold underline decoration-line underline-offset-2 hover:text-accent">
           {source.provider ?? (source.kind === "paste" ? "paste" : "tournament sheet")}
         </a>
-        {(source.event || source.creator) && <span className="text-steel">— {source.event ?? `by ${source.creator}`}</span>}
+        {(source.event || source.creator) && <span className="text-steel">{source.event ?? `by ${source.creator}`}</span>}
         {source.link && (
           <a href={source.link} target="_blank" rel="noreferrer" className="text-steel underline hover:text-ink" title="Where the team was originally shared">
             ↗
           </a>
         )}
-        <span className="ml-auto whitespace-nowrap text-steel">{source.sharedAt ? new Date(source.sharedAt * 1000).toISOString().slice(0, 10) : ""}</span>
+        <span className="ml-auto whitespace-nowrap font-mono text-steel">{source.sharedAt ? new Date(source.sharedAt * 1000).toISOString().slice(0, 10) : ""}</span>
       </div>
-      {(source.placing != null || record || source.rentalCode) && (
-        <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-steel">
+      {(source.placing != null || source.rentalCode) && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
           {source.placing != null && (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap rounded bg-ink/5 px-1.5 py-0.5 font-mono" title="Placing / rank at this event">
               #{source.placing}
-              {record && ` (${record})`}
+              {record}
             </span>
           )}
           {source.rentalCode && (
             <span
-              className="whitespace-nowrap rounded bg-accent/10 px-1.5 text-accent"
-              title="Enter this replica (rental) code in Pokémon Champions to copy the team in-game"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap"
+              title="Enter this replica (rental) code in Pokémon Champions to copy the team in-game — click to copy"
             >
-              replica code {source.rentalCode}
+              <span className="font-display text-[10px] font-semibold uppercase tracking-wide text-steel">Replica code</span>
+              <CopyButton text={source.rentalCode} label={source.rentalCode} />
             </span>
           )}
         </div>
@@ -206,7 +207,7 @@ export function TeamCard({ row, showOwner = false, defaultOpen = false }: { row:
           {sources.length > 0 && (
             <div>
               <h3 className="font-display font-semibold uppercase tracking-wide text-steel">Sources</h3>
-              <div className="mt-1 font-mono text-xs">
+              <div className="mt-1.5 space-y-2 text-xs">
                 {[...sources]
                   .sort((a, b) => (b.sharedAt ?? 0) - (a.sharedAt ?? 0))
                   .map((s) => (
