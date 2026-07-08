@@ -2,9 +2,9 @@ import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
 import Link from "next/link";
 import { ExpandAllTeams } from "@/components/ExpandAllTeams";
-import { chipCounts, chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
+import { chipValue, OriginChips } from "@/components/OriginChips";
 import { clampPage, Pager } from "@/components/Pager";
-import { browseTeams, dbConfigured, listFormats } from "@/lib/queries";
+import { browseTeams, dbConfigured, listFormats, teamChipCounts } from "@/lib/queries";
 import { toID } from "@/lib/showdown/id";
 
 export const dynamic = "force-dynamic";
@@ -22,14 +22,15 @@ export default async function TeamsPage({
   const formats = await listFormats();
   const formatId = format ?? formats.find((f) => f.active)?.id;
   const chip = chipValue(origin);
-  // Fetch unfiltered so every chip can show its count; the chip filter
-  // applies in memory over the same window, and only PER_PAGE cards render
-  // (the payload lives in the cards, not the query).
-  const allTeams = await browseTeams({ formatId, species: species ? toID(species) : undefined });
-  const filtered = filterByChip(allTeams, chip);
-  const pages = Math.ceil(filtered.length / PER_PAGE);
+  const speciesId = species ? toID(species) : undefined;
+  // Counts and pagination are DB-side over the whole format — the chips show
+  // honest totals and every page is one PER_PAGE fetch.
+  const counts = formatId ? await teamChipCounts(formatId, speciesId) : { total: 0, ladder: 0, unrated: 0, paste: 0, tournament: 0 };
+  const chipTotal = chip === "" ? counts.total : counts[chip];
+  const pages = Math.ceil(chipTotal / PER_PAGE);
   const page = clampPage(pageRaw, pages);
-  const teams = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const { rows: teams } = await browseTeams({ formatId, species: speciesId, chip, page, perPage: PER_PAGE });
+  const chipCounts = { "": counts.total, ladder: counts.ladder, unrated: counts.unrated, paste: counts.paste, tournament: counts.tournament };
   const pagerParams = { format: formatId, species, origin: chip || undefined };
 
   return (
@@ -85,7 +86,7 @@ export default async function TeamsPage({
         </div>
         {/* Row 2: chips and expand controls share one vertically-centered line. */}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} counts={chipCounts(allTeams)} />
+          <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} counts={chipCounts} />
           <ExpandAllTeams />
         </div>
       </div>

@@ -60,6 +60,27 @@ create unique index if not exists team_profiles_identity_idx on team_profiles (u
 create index if not exists team_profiles_sources_gin on team_profiles using gin (sources jsonb_path_ops);
 create index if not exists team_profiles_roster_gin on team_profiles using gin (roster);
 
+-- Ladder-vs-unrated split, queryable in SQL: a replay-origin team is "ladder"
+-- evidence only if at least one of its replays was rated. jsonpath @? is
+-- immutable, so this can be a stored generated column.
+alter table team_profiles add column if not exists has_rated boolean
+  generated always as (merged_reveals @? '$.replays[*].rating ? (@ != null)') stored;
+create index if not exists team_profiles_browse_idx on team_profiles (format_id, origin, has_rated, last_seen desc);
+
+-- Chip counts for /teams: one scan, five numbers, honest totals.
+create or replace function team_chip_counts(p_format_id text, p_species text default null)
+returns table (total int, ladder int, unrated int, paste int, tournament int)
+language sql stable as $$
+  select count(*)::int,
+         count(*) filter (where origin = 'replay' and has_rated)::int,
+         count(*) filter (where origin = 'replay' and not has_rated)::int,
+         count(*) filter (where origin = 'paste')::int,
+         count(*) filter (where origin = 'tournament')::int
+  from team_profiles
+  where format_id = p_format_id
+    and (p_species is null or roster ? p_species);
+$$;
+
 -- Partial team match: teams in a format sharing >= p_min_overlap species with
 -- the (base-forme-normalized) input. GIN-prefiltered; the per-row intersection
 -- is a constant 6x6. Ordered best-overlap-first, then most recent.

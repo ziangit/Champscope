@@ -157,37 +157,43 @@ export function TeamCard({ row, showOwner = false, defaultOpen = false }: { row:
 
   return (
     <details data-team-card open={defaultOpen} className="group rounded border border-line bg-card">
-      <summary className="flex cursor-pointer select-none list-none flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-transparent px-4 py-2 group-open:border-line [&::-webkit-details-marker]:hidden">
-        <span className="self-center font-mono text-xs text-steel transition-transform group-open:rotate-90">▶</span>
-        <span className="flex shrink-0 items-center self-center" title={row.roster.join(", ")}>
+      <summary className="flex cursor-pointer select-none list-none items-center gap-x-3 border-b border-transparent px-4 py-2 group-open:border-line [&::-webkit-details-marker]:hidden">
+        <span className="shrink-0 font-mono text-xs text-steel transition-transform group-open:rotate-90">▶</span>
+        <span className="flex shrink-0 items-center" title={row.roster.join(", ")}>
           {row.roster.map((id) => (
             <span key={id} style={iconStyle(id)} className="-mx-1 inline-block h-[30px] w-[40px]" />
           ))}
         </span>
-        {showOwner && (
-          <Link href={`/player/${row.user_id}?format=${row.format_id}`} className="font-display text-lg font-semibold uppercase tracking-wide hover:text-accent">
-            {m.displayName || row.user_id}
-          </Link>
-        )}
-        <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] uppercase ${originBadge(origin, sources, hasRated).className}`} title={originBadge(origin, sources, hasRated).title}>
-          {originBadge(origin, sources, hasRated).label}
-        </span>
-        {origin !== "replay" && (
-          <span className="max-w-56 truncate font-display text-sm font-semibold uppercase tracking-wide" title={sources.find((s) => s.event)?.event ?? sources[0]?.creator}>
-            {sources.find((s) => s.event)?.event ?? sources[0]?.creator ?? ""}
+        {/* Middle group wraps internally; the dates stay pinned right. */}
+        <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          {showOwner && (
+            <Link href={`/player/${row.user_id}?format=${row.format_id}`} className="font-display text-lg font-semibold uppercase tracking-wide hover:text-accent">
+              {m.displayName || row.user_id}
+            </Link>
+          )}
+          <span
+            className={`self-center whitespace-nowrap rounded px-1.5 py-0.5 font-mono text-[10px] uppercase ${originBadge(origin, sources, hasRated).className}`}
+            title={originBadge(origin, sources, hasRated).title}
+          >
+            {originBadge(origin, sources, hasRated).label}
           </span>
-        )}
-        <span className="font-mono text-xs text-steel" title="Team fingerprint: SHA-1 of the sorted base-forme species ids">
-          sheet {row.fingerprint.slice(0, 8)}
-        </span>
-        {(origin === "replay" || games > 0) && (
-          <span className="text-sm">
-            <span className="text-win">{row.wins}W</span>–<span className="text-loss">{row.losses}L</span>
-            {m.ties > 0 && <span className="text-steel">–{m.ties}T</span>}
-            <span className="ml-1 text-steel">({games} games)</span>
+          {origin !== "replay" && (
+            <span className="max-w-64 truncate font-display text-sm font-semibold uppercase tracking-wide" title={sources.find((s) => s.event)?.event ?? sources[0]?.creator}>
+              {sources.find((s) => s.event)?.event ?? sources[0]?.creator ?? ""}
+            </span>
+          )}
+          <span className="whitespace-nowrap font-mono text-xs text-steel" title="Team fingerprint: SHA-1 of the sorted base-forme species ids">
+            sheet {row.fingerprint.slice(0, 8)}
           </span>
-        )}
-        <span className="text-xs text-steel">
+          {(origin === "replay" || games > 0) && (
+            <span className="whitespace-nowrap text-sm">
+              <span className="text-win">{row.wins}W</span>–<span className="text-loss">{row.losses}L</span>
+              {m.ties > 0 && <span className="text-steel">–{m.ties}T</span>}
+              <span className="ml-1 text-steel">({games} games)</span>
+            </span>
+          )}
+        </span>
+        <span className="ml-auto hidden shrink-0 whitespace-nowrap text-xs text-steel sm:block">
           {new Date(row.first_seen).toISOString().slice(0, 10)} → {new Date(row.last_seen).toISOString().slice(0, 10)}
         </span>
       </summary>

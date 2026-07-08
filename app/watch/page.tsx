@@ -23,7 +23,7 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
   const [{ data: runs }, { data: snapshots }, newTeams, { data: allProfiles }] = await Promise.all([
     db().from("scout_runs").select("*").eq("format_id", formatId).like("trigger", "watch%").order("started_at", { ascending: false }).limit(5),
     db().from("ladder_snapshots").select("*").eq("format_id", formatId).order("taken_at", { ascending: false }).limit(2),
-    browseTeams({ formatId, limit: 15 }),
+    browseTeams({ formatId, perPage: 15 }).then((r) => r.rows),
     db().from("team_profiles").select("user_id, format_id, fingerprint").eq("format_id", formatId),
   ]);
 

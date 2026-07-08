@@ -73,14 +73,46 @@ export async function homeStats(): Promise<HomeStats> {
   return { teams, replays: replaysRes.count ?? 0, tournamentTeams };
 }
 
-export async function browseTeams(opts: { formatId?: string; species?: string; origin?: TeamOrigin; limit?: number }): Promise<TeamProfileRow[]> {
-  let q = db().from("team_profiles").select("*").order("last_seen", { ascending: false }).limit(opts.limit ?? 200);
+/** Chip filter values as used by the /teams UI ("" = all). */
+export type BrowseChip = "" | "ladder" | "unrated" | "paste" | "tournament";
+
+export async function browseTeams(opts: {
+  formatId?: string;
+  species?: string;
+  chip?: BrowseChip;
+  page?: number;
+  perPage?: number;
+}): Promise<{ rows: TeamProfileRow[]; total: number }> {
+  const perPage = opts.perPage ?? 10;
+  const page = Math.max(1, opts.page ?? 1);
+  let q = db()
+    .from("team_profiles")
+    .select("*", { count: "exact" })
+    .order("last_seen", { ascending: false })
+    .range((page - 1) * perPage, page * perPage - 1);
   if (opts.formatId) q = q.eq("format_id", opts.formatId);
   // roster is jsonb — containment needs a JSON string, not a JS array
   // (supabase-js would serialize the array as a Postgres array literal).
   if (opts.species) q = q.contains("roster", JSON.stringify([opts.species]));
-  if (opts.origin) q = q.eq("origin", opts.origin);
-  const { data, error } = await q;
+  if (opts.chip === "ladder") q = q.eq("origin", "replay").eq("has_rated", true);
+  else if (opts.chip === "unrated") q = q.eq("origin", "replay").eq("has_rated", false);
+  else if (opts.chip) q = q.eq("origin", opts.chip);
+  const { data, error, count } = await q;
   if (error) throw new Error(`team_profiles browse failed: ${error.message}`);
-  return data ?? [];
+  return { rows: data ?? [], total: count ?? 0 };
+}
+
+export interface ChipCountsRow {
+  total: number;
+  ladder: number;
+  unrated: number;
+  paste: number;
+  tournament: number;
+}
+
+/** Whole-format chip counts (SQL fn team_chip_counts — one scan). */
+export async function teamChipCounts(formatId: string, species?: string): Promise<ChipCountsRow> {
+  const { data, error } = await db().rpc("team_chip_counts", { p_format_id: formatId, p_species: species ?? null });
+  if (error) throw new Error(`team_chip_counts failed: ${error.message}`);
+  return (data?.[0] as ChipCountsRow | undefined) ?? { total: 0, ladder: 0, unrated: 0, paste: 0, tournament: 0 };
 }
