@@ -17,11 +17,12 @@ export async function runScout(formData: FormData): Promise<void> {
   const names = namesRaw
     .split(/[\n,]+/)
     .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 5); // politeness: cap ad-hoc fan-out
+    .filter(Boolean);
   const replayIds = [...urlsRaw.matchAll(REPLAY_URL)].map((m) => m[1].replace(/\.json$/, ""));
 
   if (names.length === 0 && replayIds.length === 0) redirect("/scout?error=empty");
+  if (names.length > 1) redirect("/scout?error=multi"); // one username per scout
+  const name = names[0];
 
   const run = {
     format_id: formatId,
@@ -37,9 +38,8 @@ export async function runScout(formData: FormData): Promise<void> {
     totals.errors.push(...s.errors);
   };
 
-  for (const name of names) {
-    merge(await scoutUser(name, { formatId, since }));
-  }
+  // Replays first: cheap (cached forever), and when a username is also given
+  // they double as the membership check below.
   for (const id of replayIds) {
     const stats: ScoutStats = { replaysFound: 1, replaysFetched: 0, newTeams: 0, errors: [] };
     try {
@@ -50,25 +50,42 @@ export async function runScout(formData: FormData): Promise<void> {
     merge(stats);
   }
 
+  // Username + replays only make sense together when the username actually
+  // plays in those replays — otherwise the combination has no result.
+  let mismatch = false;
+  if (name && replayIds.length > 0) {
+    const { data } = await db().from("replays").select("p1_user_id, p2_user_id").in("id", replayIds);
+    const userId = toID(name);
+    mismatch = !(data ?? []).some((r) => r.p1_user_id === userId || r.p2_user_id === userId);
+  }
+
+  if (name && !mismatch) {
+    merge(await scoutUser(name, { formatId, since }));
+  }
+
   await db().from("scout_runs").insert({
     ...run,
     finished_at: new Date().toISOString(),
-    players_checked: names.length,
+    players_checked: name && !mismatch ? 1 : 0,
     replays_found: totals.replaysFound,
     new_teams: totals.newTeams,
     errors: totals.errors,
   });
 
-  // Results render on /scout itself, below the form — the search stays on top.
-  if (names.length > 0) {
-    redirect(`/scout?scouted=${toID(names[0])}&format=${formatId}`);
+  if (mismatch) redirect("/scout?error=mismatch");
+  // A replay's format is embedded in its id and may differ from the dropdown.
+  const resultFormat = !name && replayIds.length > 0 ? replayIds[0].replace(/-\d+$/, "") : formatId;
+  if (name) {
+    redirect(`/scout?scouted=${toID(name)}&format=${resultFormat}`);
   }
-  // URL-only scout: show the replay's first player. The replay id embeds its
-  // true format ("gen9...regmb-2641873828"), which may differ from the dropdown.
-  if (replayIds.length > 0) {
-    const { data } = await db().from("replays").select("p1_user_id").eq("id", replayIds[0]).maybeSingle();
-    const replayFormat = replayIds[0].replace(/-\d+$/, "");
-    if (data?.p1_user_id) redirect(`/scout?scouted=${data.p1_user_id}&format=${replayFormat}`);
+  // Replay-only scout: show both players of the given replay(s).
+  const subjects: string[] = [];
+  const { data } = await db().from("replays").select("p1_user_id, p2_user_id").in("id", replayIds);
+  for (const r of data ?? []) {
+    for (const u of [r.p1_user_id, r.p2_user_id]) if (u && !subjects.includes(u)) subjects.push(u);
+  }
+  if (subjects.length > 0) {
+    redirect(`/scout?scouted=${subjects.slice(0, 8).join(",")}&format=${resultFormat}`);
   }
   redirect(`/teams?format=${formatId}&scouted=1`);
 }

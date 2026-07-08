@@ -15,10 +15,13 @@ export default async function ScoutPage({
   const { error, scouted, format, origin } = await searchParams;
   if (!dbConfigured()) return <SetupNotice />;
   const formats = await listFormats();
-  // Results render below the form — the form always stays on top.
+  // Results render below the form — the form always stays on top. Multiple
+  // subjects (several usernames and/or a replay's two players) each get a
+  // section; the chips filter across all of them.
   const chip = chipValue(origin);
-  const allTeams = scouted ? await teamsForPlayer(scouted, format) : [];
-  const teams = filterByChip(allTeams, chip);
+  const subjects = (scouted ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 12);
+  const bySubject = await Promise.all(subjects.map(async (u) => ({ userId: u, teams: await teamsForPlayer(u, format) })));
+  const allTeams = bySubject.flatMap((s) => s.teams);
 
   return (
     <div>
@@ -31,19 +34,32 @@ export default async function ScoutPage({
 
       {error === "empty" && (
         <p className="mt-4 rounded border border-accent/40 bg-accent/5 px-3 py-2 text-sm text-accent">
-          Enter at least one username or replay URL to scout.
+          Enter a username or replay URL to scout.
+        </p>
+      )}
+      {error === "multi" && (
+        <p className="mt-4 rounded border border-accent/40 bg-accent/5 px-3 py-2 text-sm text-accent">
+          One username per scout, please.
+        </p>
+      )}
+      {error === "mismatch" && (
+        <p className="mt-4 rounded border border-accent/40 bg-accent/5 px-3 py-2 text-sm text-accent">
+          No result — that username doesn&apos;t play in the given replay(s).
         </p>
       )}
 
       <form action={runScout} className="mt-6 space-y-4">
         <label className="block">
-          <span className="font-display font-semibold uppercase tracking-wide text-steel">Usernames</span>
-          <textarea
+          <span className="font-display font-semibold uppercase tracking-wide text-steel">Username</span>
+          <input
+            type="text"
             name="names"
-            rows={2}
-            placeholder="one per line or comma-separated"
+            placeholder="a Showdown username"
             className="mt-1 w-full rounded border border-line bg-card px-3 py-2 font-mono text-sm focus-visible:outline-2 focus-visible:outline-accent"
           />
+          <span className="mt-1 block text-xs text-steel">
+            With replay URLs below: the username must play in those replays, or the scout returns no result.
+          </span>
         </label>
 
         <label className="block">
@@ -96,24 +112,30 @@ export default async function ScoutPage({
       {scouted && (
         <section className="mt-8 space-y-4">
           <p className="rounded border border-win/40 bg-win/5 px-3 py-2 text-sm text-win">
-            Scout finished.{" "}
-            {allTeams.length > 0 ? (
-              <>
-                {allTeams.length} team{allTeams.length === 1 ? "" : "s"} on file for{" "}
-                <Link href={`/player/${scouted}${format ? `?format=${format}` : ""}`} className="underline">
-                  {allTeams[0]?.merged_reveals.displayName ?? scouted}
-                </Link>
-                .
-              </>
-            ) : (
-              "No public replays found for this player — recorded, not an error."
-            )}
+            Scout finished — {subjects.length} player{subjects.length === 1 ? "" : "s"}, {allTeams.length} team
+            {allTeams.length === 1 ? "" : "s"} on file.
           </p>
           {allTeams.length > 0 && <OriginChips path="/scout" params={{ scouted, format }} current={chip} counts={chipCounts(allTeams)} />}
-          {chip && teams.length === 0 && <p className="text-sm text-steel">No teams match this filter.</p>}
-          {teams.map((row) => (
-            <TeamCard key={row.id} row={row} />
-          ))}
+          {bySubject.map(({ userId, teams: subjectTeams }) => {
+            const shown = filterByChip(subjectTeams, chip);
+            return (
+              <div key={userId} className="space-y-4">
+                <h2 className="border-b border-line pb-1 font-display text-xl font-bold uppercase tracking-wide">
+                  <Link href={`/player/${userId}${format ? `?format=${format}` : ""}`} className="hover:text-accent">
+                    {subjectTeams[0]?.merged_reveals.displayName ?? userId}
+                  </Link>{" "}
+                  <span className="text-sm font-normal text-steel">
+                    {subjectTeams.length === 0
+                      ? "— no public replays found (recorded, not an error)"
+                      : `${shown.length}${chip ? ` of ${subjectTeams.length}` : ""} team${subjectTeams.length === 1 ? "" : "s"}`}
+                  </span>
+                </h2>
+                {shown.map((row) => (
+                  <TeamCard key={row.id} row={row} />
+                ))}
+              </div>
+            );
+          })}
         </section>
       )}
     </div>
