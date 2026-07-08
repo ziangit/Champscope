@@ -45,7 +45,7 @@ body {
 /* Team-card accordion: animate the native <details> open/close. Pure CSS —
    browsers without ::details-content / interpolate-size fall back to the
    instant toggle. prefers-reduced-motion above disables it globally. */
-details[data-team-card] {
+:root {
   interpolate-size: allow-keywords;
 }
 details[data-team-card]::details-content {
@@ -60,4 +60,13 @@ details[data-team-card]::details-content {
 details[data-team-card][open]::details-content {
   block-size: auto;
   opacity: 1;
+}
+/* The expand direction starts from the browser's hidden state — without an
+   explicit starting style the transition is skipped and only collapse
+   animates. */
+@starting-style {
+  details[data-team-card][open]::details-content {
+    block-size: 0;
+    opacity: 0;
+  }
 }
