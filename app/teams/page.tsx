@@ -43,8 +43,22 @@ export default async function TeamsPage({
               Every team the scouter and watcher have filed{formatId ? ` in ${formats.find((f) => f.id === formatId)?.display_name ?? formatId}` : ""}.
             </p>
           </div>
-          <form method="get" className="flex items-center gap-2">
-            {formatId && <input type="hidden" name="format" value={formatId} />}
+          <form method="get" className="flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="format-filter">
+              Format
+            </label>
+            <select
+              id="format-filter"
+              name="format"
+              defaultValue={formatId}
+              className="block rounded border border-line bg-card px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              {formats.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.display_name}
+                </option>
+              ))}
+            </select>
             <label className="sr-only" htmlFor="species-filter">
               Has species
             </label>
