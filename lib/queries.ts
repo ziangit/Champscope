@@ -52,6 +52,27 @@ export async function teamsForPlayer(userId: string, formatId?: string): Promise
   return data ?? [];
 }
 
+export interface HomeStats {
+  teams: number;
+  replays: number;
+  tournamentTeams: number;
+}
+
+/** Headline counts for the landing page (three cheap head-count queries). */
+export async function homeStats(): Promise<HomeStats> {
+  const count = async (apply: (q: ReturnType<ReturnType<typeof db>["from"]>) => unknown) => {
+    const q = db().from("team_profiles");
+    const { count: n } = (await apply(q)) as { count: number | null };
+    return n ?? 0;
+  };
+  const [teams, tournamentTeams, replaysRes] = await Promise.all([
+    count((q) => q.select("id", { count: "exact", head: true })),
+    count((q) => q.select("id", { count: "exact", head: true }).eq("origin", "tournament")),
+    db().from("replays").select("id", { count: "exact", head: true }),
+  ]);
+  return { teams, replays: replaysRes.count ?? 0, tournamentTeams };
+}
+
 export async function browseTeams(opts: { formatId?: string; species?: string; origin?: TeamOrigin; limit?: number }): Promise<TeamProfileRow[]> {
   let q = db().from("team_profiles").select("*").order("last_seen", { ascending: false }).limit(opts.limit ?? 200);
   if (opts.formatId) q = q.eq("format_id", opts.formatId);
