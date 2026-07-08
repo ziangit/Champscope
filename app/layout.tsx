@@ -18,6 +18,8 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Champscope",
   description: "VGC-first Pokémon Showdown replay scouting for the Champions era",
+  // Hotlinked from the official Showdown client (we bundle no Pokémon assets).
+  icons: { icon: "https://play.pokemonshowdown.com/sprites/gen5/floette.png" },
 };
 
 const NAV = [
