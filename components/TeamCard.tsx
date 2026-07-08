@@ -24,51 +24,53 @@ function MonSummary({ mon }: { mon: MergedMon }) {
   // the likely current set, the rest are kept visible below.
   const alsoSeen = moves.slice(4);
   return (
+    // Annotations (sprites, provenance marks, counts, nicknames, extras) are
+    // select-none so drag-selecting a card copies clean, importable set text.
     <div className="flex gap-3 border-t border-line py-3 first:border-t-0">
-      <img src={spriteUrl(mon.species)} alt={mon.species} width={48} height={48} className="h-12 w-12 shrink-0 [image-rendering:pixelated]" />
+      <img src={spriteUrl(mon.species)} alt="" width={48} height={48} className="h-12 w-12 shrink-0 select-none [image-rendering:pixelated]" />
       <div className="min-w-0 font-mono text-sm leading-6">
         <div className="font-semibold">
           {mon.species}
-          {mon.nicknames.length > 0 && <span className="font-normal text-steel"> “{mon.nicknames.join("”, “")}”</span>}
+          {mon.nicknames.length > 0 && <span className="select-none font-normal text-steel"> “{mon.nicknames.join("”, “")}”</span>}
           {item && (
             <span className="font-normal" title={`Item — ${item.source === "sheet" ? "from team sheet" : "revealed in battle"} (seen ${item.count}×)`}>
               {" "}@ {item.name}
-              {Object.keys(mon.items).length > 1 && <span className="text-steel"> (+{Object.keys(mon.items).length - 1})</span>}
+              {Object.keys(mon.items).length > 1 && <span className="select-none text-steel"> (+{Object.keys(mon.items).length - 1})</span>}
             </span>
           )}
           {alsoSeen.length > 0 && (
-            <span className="ml-2 rounded bg-accent/10 px-1 font-mono text-[10px] uppercase text-accent" title="More than 4 distinct moves seen — this player runs set variations">
+            <span className="ml-2 select-none rounded bg-accent/10 px-1 font-mono text-[10px] uppercase text-accent" title="More than 4 distinct moves seen — this player runs set variations">
               variants
             </span>
           )}
         </div>
         {ability && (
           <div title={`Ability — ${ability.source === "sheet" ? "from team sheet" : "revealed in battle"} (seen ${ability.count}×)`}>
-            Ability: {ability.name} <span className="text-steel">{sourceMark(ability.source)}</span>
+            Ability: {ability.name} <span className="select-none text-steel">{sourceMark(ability.source)}</span>
           </div>
         )}
         {mon.evs && statsLine(mon.evs, 0) && (
           <div title="EVs — from the published team sheet, never inferred">
-            EVs: {statsLine(mon.evs, 0)} <span className="text-steel">●</span>
+            EVs: {statsLine(mon.evs, 0)} <span className="select-none text-steel">●</span>
           </div>
         )}
         {mon.nature && (
           <div title="Nature — from the published team sheet, never inferred">
-            {mon.nature} Nature <span className="text-steel">●</span>
+            {mon.nature} Nature <span className="select-none text-steel">●</span>
           </div>
         )}
         {mon.ivs && statsLine(mon.ivs, 31) && (
           <div title="IVs — from the published team sheet, never inferred">
-            IVs: {statsLine(mon.ivs, 31)} <span className="text-steel">●</span>
+            IVs: {statsLine(mon.ivs, 31)} <span className="select-none text-steel">●</span>
           </div>
         )}
         {set.map((m) => (
           <div key={m.name} title={`${m.source === "sheet" ? "From team sheet" : "Revealed in battle"} — seen ${m.count}×`}>
-            - {m.name} <span className="text-steel">{sourceMark(m.source)} {m.count}×</span>
+            - {m.name} <span className="select-none text-steel">{sourceMark(m.source)} {m.count}×</span>
           </div>
         ))}
         {alsoSeen.length > 0 && (
-          <div className="text-xs text-steel">
+          <div className="select-none text-xs text-steel">
             also seen:{" "}
             {alsoSeen.map((m, i) => (
               <span key={m.name} title={`${m.source === "sheet" ? "From team sheet" : "Revealed in battle"} — seen ${m.count}×`}>
@@ -137,7 +139,7 @@ export function TeamCard({ row, showOwner = false }: { row: TeamProfileRow; show
 
   return (
     <section className="rounded border border-line bg-card">
-      <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-line px-4 py-2">
+      <header className="flex select-none flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-line px-4 py-2">
         {showOwner && (
           <Link href={`/player/${row.user_id}?format=${row.format_id}`} className="font-display text-lg font-semibold uppercase tracking-wide hover:text-accent">
             {m.displayName || row.user_id}
