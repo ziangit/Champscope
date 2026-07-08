@@ -124,8 +124,8 @@ function SourceRow({ source }: { source: TeamSourceRef }) {
         {source.placing != null && `#${source.placing}`}
         {record && ` (${record})`}
         {source.rentalCode && (
-          <span className="ml-1 rounded bg-accent/10 px-1 text-accent" title="Replica / rental code">
-            {source.rentalCode}
+          <span className="ml-1 rounded bg-accent/10 px-1 text-accent" title="Enter this replica (rental) code in Pokémon Champions to copy the team in-game">
+            replica {source.rentalCode}
           </span>
         )}
       </td>
