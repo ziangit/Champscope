@@ -55,7 +55,9 @@ export async function teamsForPlayer(userId: string, formatId?: string): Promise
 export async function browseTeams(opts: { formatId?: string; species?: string; origin?: TeamOrigin; limit?: number }): Promise<TeamProfileRow[]> {
   let q = db().from("team_profiles").select("*").order("last_seen", { ascending: false }).limit(opts.limit ?? 200);
   if (opts.formatId) q = q.eq("format_id", opts.formatId);
-  if (opts.species) q = q.contains("roster", [opts.species]);
+  // roster is jsonb — containment needs a JSON string, not a JS array
+  // (supabase-js would serialize the array as a Postgres array literal).
+  if (opts.species) q = q.contains("roster", JSON.stringify([opts.species]));
   if (opts.origin) q = q.eq("origin", opts.origin);
   const { data, error } = await q;
   if (error) throw new Error(`team_profiles browse failed: ${error.message}`);
