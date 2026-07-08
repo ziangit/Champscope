@@ -1,21 +1,10 @@
 import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
-import Link from "next/link";
+import { chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
 import { browseTeams, dbConfigured, listFormats, type TeamOrigin } from "@/lib/queries";
 import { toID } from "@/lib/showdown/id";
 
 export const dynamic = "force-dynamic";
-
-/** Chip filters: ladder/unrated split replay-origin teams by whether any of
- * their games were rated (an unrated game is not ladder evidence). */
-const CHIPS = [
-  { value: "", label: "All" },
-  { value: "ladder", label: "Ladder" },
-  { value: "unrated", label: "Unrated" },
-  { value: "paste", label: "Pastes" },
-  { value: "tournament", label: "Tournament" },
-] as const;
-type Chip = (typeof CHIPS)[number]["value"];
 
 export default async function TeamsPage({
   searchParams,
@@ -27,20 +16,10 @@ export default async function TeamsPage({
 
   const formats = await listFormats();
   const formatId = format ?? formats.find((f) => f.active)?.id;
-  const chip: Chip = CHIPS.some((c) => c.value === origin) ? (origin as Chip) : "";
+  const chip = chipValue(origin);
   const originFilter: TeamOrigin | undefined =
     chip === "ladder" || chip === "unrated" ? "replay" : chip === "paste" ? "paste" : chip === "tournament" ? "tournament" : undefined;
-  let teams = await browseTeams({ formatId, species: species ? toID(species) : undefined, origin: originFilter });
-  if (chip === "ladder") teams = teams.filter((t) => (t.merged_reveals.replays ?? []).some((r) => r.rating !== null));
-  if (chip === "unrated") teams = teams.filter((t) => !(t.merged_reveals.replays ?? []).some((r) => r.rating !== null));
-
-  const chipHref = (value: Chip) => {
-    const q = new URLSearchParams();
-    if (formatId) q.set("format", formatId);
-    if (species) q.set("species", species);
-    if (value) q.set("origin", value);
-    return `/teams?${q.toString()}`;
-  };
+  const teams = filterByChip(await browseTeams({ formatId, species: species ? toID(species) : undefined, origin: originFilter }), chip);
 
   return (
     <div className="space-y-6">
@@ -66,20 +45,8 @@ export default async function TeamsPage({
             Filter
           </button>
         </form>
-        <div className="flex w-full flex-wrap gap-2">
-          {CHIPS.map((c) => (
-            <Link
-              key={c.value}
-              href={chipHref(c.value)}
-              className={
-                c.value === chip
-                  ? "rounded-full bg-accent px-3 py-1 font-display text-xs font-semibold uppercase tracking-wide text-white"
-                  : "rounded-full border border-line bg-card px-3 py-1 font-display text-xs font-semibold uppercase tracking-wide text-steel hover:border-steel hover:text-ink"
-              }
-            >
-              {c.label}
-            </Link>
-          ))}
+        <div className="w-full">
+          <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} />
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { dbConfigured, listFormats, teamsForPlayer } from "@/lib/queries";
+import { chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
 import { SetupNotice } from "@/components/SetupNotice";
 import { TeamCard } from "@/components/TeamCard";
 import { runScout } from "./actions";
@@ -9,13 +10,15 @@ export const dynamic = "force-dynamic";
 export default async function ScoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; scouted?: string; format?: string }>;
+  searchParams: Promise<{ error?: string; scouted?: string; format?: string; origin?: string }>;
 }) {
-  const { error, scouted, format } = await searchParams;
+  const { error, scouted, format, origin } = await searchParams;
   if (!dbConfigured()) return <SetupNotice />;
   const formats = await listFormats();
   // Results render below the form — the form always stays on top.
-  const teams = scouted ? await teamsForPlayer(scouted, format) : [];
+  const chip = chipValue(origin);
+  const allTeams = scouted ? await teamsForPlayer(scouted, format) : [];
+  const teams = filterByChip(allTeams, chip);
 
   return (
     <div>
@@ -94,11 +97,11 @@ export default async function ScoutPage({
         <section className="mt-8 space-y-4">
           <p className="rounded border border-win/40 bg-win/5 px-3 py-2 text-sm text-win">
             Scout finished.{" "}
-            {teams.length > 0 ? (
+            {allTeams.length > 0 ? (
               <>
-                {teams.length} team{teams.length === 1 ? "" : "s"} on file for{" "}
+                {allTeams.length} team{allTeams.length === 1 ? "" : "s"} on file for{" "}
                 <Link href={`/player/${scouted}${format ? `?format=${format}` : ""}`} className="underline">
-                  {teams[0]?.merged_reveals.displayName ?? scouted}
+                  {allTeams[0]?.merged_reveals.displayName ?? scouted}
                 </Link>
                 .
               </>
@@ -106,6 +109,8 @@ export default async function ScoutPage({
               "No public replays found for this player — recorded, not an error."
             )}
           </p>
+          {allTeams.length > 0 && <OriginChips path="/scout" params={{ scouted, format }} current={chip} />}
+          {chip && teams.length === 0 && <p className="text-sm text-steel">No teams match this filter.</p>}
           {teams.map((row) => (
             <TeamCard key={row.id} row={row} />
           ))}
