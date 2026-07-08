@@ -73,15 +73,13 @@ export default async function TeamsPage({
             <button type="submit" className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:text-ink">
               Filter
             </button>
-            {(species || chip) && (
-              <Link
-                href={formatId ? `/teams?format=${formatId}` : "/teams"}
-                className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:border-accent hover:text-accent"
-                title="Clear species, origin and page filters"
-              >
-                Reset
-              </Link>
-            )}
+            <Link
+              href={formatId ? `/teams?format=${formatId}` : "/teams"}
+              className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:border-accent hover:text-accent"
+              title="Clear species, origin and page filters"
+            >
+              Reset
+            </Link>
           </form>
         </div>
         {/* Row 2: chips and expand controls share one vertically-centered line. */}
