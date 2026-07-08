@@ -108,29 +108,38 @@ function originBadge(origin: "replay" | "paste" | "tournament", sources: TeamSou
 function SourceRow({ source }: { source: TeamSourceRef }) {
   const record = source.record ? `${source.record.wins}-${source.record.losses}${source.record.ties ? `-${source.record.ties}` : ""}` : null;
   return (
-    <tr className="border-t border-line first:border-t-0">
-      <td className="py-0.5">
-        <a href={source.url} target="_blank" rel="noreferrer" className="underline hover:text-accent">
+    <div className="border-t border-line py-1.5 first:border-t-0 first:pt-0">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <a href={source.url} target="_blank" rel="noreferrer" className="whitespace-nowrap underline hover:text-accent">
           {source.provider ?? (source.kind === "paste" ? "paste" : "tournament sheet")}
         </a>
-        {(source.event || source.creator) && <span className="text-steel"> — {source.event ?? `by ${source.creator}`}</span>}
+        {(source.event || source.creator) && <span className="text-steel">— {source.event ?? `by ${source.creator}`}</span>}
         {source.link && (
-          <a href={source.link} target="_blank" rel="noreferrer" className="ml-1 text-steel underline hover:text-ink" title="Where the team was originally shared">
+          <a href={source.link} target="_blank" rel="noreferrer" className="text-steel underline hover:text-ink" title="Where the team was originally shared">
             ↗
           </a>
         )}
-      </td>
-      <td className="py-0.5 text-right text-steel">
-        {source.placing != null && `#${source.placing}`}
-        {record && ` (${record})`}
-        {source.rentalCode && (
-          <span className="ml-1 rounded bg-accent/10 px-1 text-accent" title="Enter this replica (rental) code in Pokémon Champions to copy the team in-game">
-            replica code {source.rentalCode}
-          </span>
-        )}
-      </td>
-      <td className="w-24 py-0.5 text-right text-steel">{source.sharedAt ? new Date(source.sharedAt * 1000).toISOString().slice(0, 10) : ""}</td>
-    </tr>
+        <span className="ml-auto whitespace-nowrap text-steel">{source.sharedAt ? new Date(source.sharedAt * 1000).toISOString().slice(0, 10) : ""}</span>
+      </div>
+      {(source.placing != null || record || source.rentalCode) && (
+        <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-steel">
+          {source.placing != null && (
+            <span className="whitespace-nowrap">
+              #{source.placing}
+              {record && ` (${record})`}
+            </span>
+          )}
+          {source.rentalCode && (
+            <span
+              className="whitespace-nowrap rounded bg-accent/10 px-1.5 text-accent"
+              title="Enter this replica (rental) code in Pokémon Champions to copy the team in-game"
+            >
+              replica code {source.rentalCode}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -197,15 +206,13 @@ export function TeamCard({ row, showOwner = false, defaultOpen = false }: { row:
           {sources.length > 0 && (
             <div>
               <h3 className="font-display font-semibold uppercase tracking-wide text-steel">Sources</h3>
-              <table className="mt-1 w-full font-mono text-xs">
-                <tbody>
-                  {[...sources]
-                    .sort((a, b) => (b.sharedAt ?? 0) - (a.sharedAt ?? 0))
-                    .map((s) => (
-                      <SourceRow key={s.key} source={s} />
-                    ))}
-                </tbody>
-              </table>
+              <div className="mt-1 font-mono text-xs">
+                {[...sources]
+                  .sort((a, b) => (b.sharedAt ?? 0) - (a.sharedAt ?? 0))
+                  .map((s) => (
+                    <SourceRow key={s.key} source={s} />
+                  ))}
+              </div>
             </div>
           )}
           {origin !== "replay" ? (
