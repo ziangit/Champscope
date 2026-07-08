@@ -41,3 +41,23 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Team-card accordion: animate the native <details> open/close. Pure CSS —
+   browsers without ::details-content / interpolate-size fall back to the
+   instant toggle. prefers-reduced-motion above disables it globally. */
+details[data-team-card] {
+  interpolate-size: allow-keywords;
+}
+details[data-team-card]::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  opacity: 0;
+  transition:
+    block-size 180ms ease,
+    opacity 150ms ease,
+    content-visibility 180ms allow-discrete;
+}
+details[data-team-card][open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}

@@ -1,4 +1,6 @@
+import type { CSSProperties } from "react";
 import gen5 from "@/data/cv/gen5.json";
+import iconIndexes from "@/data/cv/icon-indexes.json";
 import { BATTLE_FORME_SUFFIX } from "./scout/formes";
 import { toID } from "./showdown/id";
 
@@ -46,4 +48,24 @@ export function spriteUrl(species: string): string {
 
 export function replayUrl(replayId: string): string {
   return `https://replay.pokemonshowdown.com/${replayId}`;
+}
+
+/**
+ * Box-icon via the official sprite sheet (how Showdown renders team
+ * previews): one browser-cached image for every icon on the page, selected
+ * by background-position. Index map is emitted by scripts/build-cv-templates.
+ */
+const ICON_SHEET = "https://play.pokemonshowdown.com/sprites/pokemonicons-sheet.png";
+const ICON_MAP = iconIndexes as Record<string, number>;
+
+export function iconStyle(species: string): CSSProperties {
+  let id = toID(species);
+  if (!(id in ICON_MAP)) {
+    const base = toID(species.replace(BATTLE_FORME_SUFFIX, ""));
+    if (base in ICON_MAP) id = base;
+  }
+  const index = ICON_MAP[id] ?? 0;
+  return {
+    background: `transparent url(${ICON_SHEET}) no-repeat scroll -${(index % 12) * 40}px -${Math.floor(index / 12) * 30}px`,
+  };
 }

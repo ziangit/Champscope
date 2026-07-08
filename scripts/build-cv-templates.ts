@@ -97,6 +97,18 @@ async function buildIcons(): Promise<TemplateSet> {
     }
   }
 
+  // Also emit the species -> sheet-index map (for CSS background-position
+  // team-preview strips in the UI): every id, no dedupe.
+  const indexMap: Record<string, number> = {};
+  for (const id of Object.keys(pokedex)) {
+    const entry = pokedex[id];
+    if (!entry || entry.num <= 0) continue;
+    const idx = overrides.get(id) ?? (entry.num <= 1025 ? entry.num : -1);
+    if (idx >= 0 && idx < SHEET_COLS * rows) indexMap[id] = idx;
+  }
+  writeFileSync(join(OUT_DIR, "icon-indexes.json"), JSON.stringify(indexMap));
+  console.log(`icon-indexes.json: ${Object.keys(indexMap).length} entries`);
+
   const seenIndex = new Set<number>();
   const templates: Template[] = [];
   const ids = Object.keys(pokedex).sort(); // base formes sort before their formes

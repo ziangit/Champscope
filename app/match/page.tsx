@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- sprites are hotlinked from Showdown by design */
-import Link from "next/link";
+import { clampPage, Pager } from "@/components/Pager";
 import { ScreenshotInput } from "@/components/ScreenshotInput";
 import { SetupNotice } from "@/components/SetupNotice";
 import { TeamCard } from "@/components/TeamCard";
@@ -35,39 +35,6 @@ function DiffLine({ row, queryIds }: { row: TeamProfileRow; queryIds: string[] }
   );
 }
 
-/** Prev/next pager preserving the whole query string. */
-function Pager({ page, pages, param, params }: { page: number; pages: number; param: string; params: Record<string, string | undefined> }) {
-  if (pages <= 1) return null;
-  const href = (p: number) => {
-    const q = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) if (v) q.set(k, v);
-    q.set(param, String(p));
-    return `/match?${q.toString()}`;
-  };
-  return (
-    <div className="flex items-center gap-3 text-sm">
-      {page > 1 ? (
-        <Link href={href(page - 1)} className="rounded border border-line bg-card px-3 py-1 text-steel hover:text-ink">
-          ← Prev
-        </Link>
-      ) : (
-        <span className="rounded border border-line px-3 py-1 text-steel/40">← Prev</span>
-      )}
-      <span className="font-mono text-xs text-steel">
-        page {page} / {pages}
-      </span>
-      {page < pages ? (
-        <Link href={href(page + 1)} className="rounded border border-line bg-card px-3 py-1 text-steel hover:text-ink">
-          Next →
-        </Link>
-      ) : (
-        <span className="rounded border border-line px-3 py-1 text-steel/40">Next →</span>
-      )}
-    </div>
-  );
-}
-
-const clampPage = (raw: string | undefined, pages: number) => Math.min(Math.max(1, Number(raw) || 1), Math.max(1, pages));
 
 export default async function MatchPage({
   searchParams,
@@ -172,7 +139,7 @@ export default async function MatchPage({
             {result.exact.slice((exactPage - 1) * EXACT_PER_PAGE, exactPage * EXACT_PER_PAGE).map((row) => (
               <TeamCard key={row.id} row={row} showOwner />
             ))}
-            <Pager page={exactPage} pages={exactPages} param="epage" params={pagerParams} />
+            <Pager page={exactPage} pages={exactPages} param="epage" path="/match" params={pagerParams} />
           </section>
 
           <section id="partial" className="space-y-4">
@@ -191,7 +158,7 @@ export default async function MatchPage({
                 <TeamCard row={profile} showOwner />
               </div>
             ))}
-            <Pager page={partialPage} pages={partialPages} param="ppage" params={pagerParams} />
+            <Pager page={partialPage} pages={partialPages} param="ppage" path="/match" params={pagerParams} />
           </section>
         </>
       )}

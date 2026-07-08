@@ -2,26 +2,34 @@ import { TeamCard } from "@/components/TeamCard";
 import { SetupNotice } from "@/components/SetupNotice";
 import { ExpandAllTeams } from "@/components/ExpandAllTeams";
 import { chipCounts, chipValue, filterByChip, OriginChips } from "@/components/OriginChips";
+import { clampPage, Pager } from "@/components/Pager";
 import { browseTeams, dbConfigured, listFormats } from "@/lib/queries";
 import { toID } from "@/lib/showdown/id";
 
 export const dynamic = "force-dynamic";
 
+const PER_PAGE = 10;
+
 export default async function TeamsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ format?: string; species?: string; origin?: string }>;
+  searchParams: Promise<{ format?: string; species?: string; origin?: string; page?: string }>;
 }) {
-  const { format, species, origin } = await searchParams;
+  const { format, species, origin, page: pageRaw } = await searchParams;
   if (!dbConfigured()) return <SetupNotice />;
 
   const formats = await listFormats();
   const formatId = format ?? formats.find((f) => f.active)?.id;
   const chip = chipValue(origin);
   // Fetch unfiltered so every chip can show its count; the chip filter
-  // applies in memory over the same window.
+  // applies in memory over the same window, and only PER_PAGE cards render
+  // (the payload lives in the cards, not the query).
   const allTeams = await browseTeams({ formatId, species: species ? toID(species) : undefined });
-  const teams = filterByChip(allTeams, chip);
+  const filtered = filterByChip(allTeams, chip);
+  const pages = Math.ceil(filtered.length / PER_PAGE);
+  const page = clampPage(pageRaw, pages);
+  const teams = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const pagerParams = { format: formatId, species, origin: chip || undefined };
 
   return (
     <div className="space-y-6">
@@ -66,6 +74,8 @@ export default async function TeamsPage({
       {teams.map((row) => (
         <TeamCard key={row.id} row={row} showOwner />
       ))}
+
+      <Pager page={page} pages={pages} param="page" path="/teams" params={pagerParams} />
     </div>
   );
 }

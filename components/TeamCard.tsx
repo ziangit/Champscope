@@ -3,7 +3,7 @@ import Link from "next/link";
 import { exportTeam, statsLine } from "@/lib/scout/export";
 import { modal, type MergedMon, type TeamSourceRef } from "@/lib/scout/merge";
 import type { TeamProfileRow } from "@/lib/queries";
-import { replayUrl, spriteUrl } from "@/lib/sprites";
+import { iconStyle, replayUrl, spriteUrl } from "@/lib/sprites";
 import { CopyButton } from "./CopyButton";
 
 function pct(n: number, total: number) {
@@ -149,6 +149,11 @@ export function TeamCard({ row, showOwner = false, defaultOpen = true }: { row: 
     <details data-team-card open={defaultOpen} className="group rounded border border-line bg-card">
       <summary className="flex cursor-pointer select-none list-none flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-transparent px-4 py-2 group-open:border-line [&::-webkit-details-marker]:hidden">
         <span className="self-center font-mono text-xs text-steel transition-transform group-open:rotate-90">▶</span>
+        <span className="flex shrink-0 items-center self-center" title={row.roster.join(", ")}>
+          {row.roster.map((id) => (
+            <span key={id} style={iconStyle(id)} className="-mx-1 inline-block h-[30px] w-[40px]" />
+          ))}
+        </span>
         {showOwner && (
           <Link href={`/player/${row.user_id}?format=${row.format_id}`} className="font-display text-lg font-semibold uppercase tracking-wide hover:text-accent">
             {m.displayName || row.user_id}
