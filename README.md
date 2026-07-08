@@ -76,3 +76,7 @@ Every team is origin-labeled and deduped per source; EVs and natures are never i
 ## Politeness
 
 All Showdown traffic goes through a single serial queue (≥600 ms between requests, honest User-Agent, exponential backoff, permanent replay cache). Keep it that way.
+
+---
+
+MIT licensed. If Champscope is useful to you, a ⭐ on GitHub helps other players find it.
