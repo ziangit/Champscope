@@ -34,38 +34,43 @@ export default async function TeamsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold uppercase tracking-wide">Known teams</h1>
-          <p className="mt-1 text-sm text-steel">
-            Every team the scouter and watcher have filed{formatId ? ` in ${formats.find((f) => f.id === formatId)?.display_name ?? formatId}` : ""}.
-          </p>
-        </div>
-        <form method="get" className="flex items-end gap-2">
-          {formatId && <input type="hidden" name="format" value={formatId} />}
-          <label className="block text-sm">
-            <span className="font-display font-semibold uppercase tracking-wide text-steel">Has species</span>
+      <div className="space-y-4">
+        {/* Row 1: title on the left, species filter bottom-aligned on the right. */}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-bold uppercase tracking-wide">Known teams</h1>
+            <p className="mt-1 text-sm text-steel">
+              Every team the scouter and watcher have filed{formatId ? ` in ${formats.find((f) => f.id === formatId)?.display_name ?? formatId}` : ""}.
+            </p>
+          </div>
+          <form method="get" className="flex items-center gap-2">
+            {formatId && <input type="hidden" name="format" value={formatId} />}
+            <label className="sr-only" htmlFor="species-filter">
+              Has species
+            </label>
             <input
+              id="species-filter"
               name="species"
               defaultValue={species ?? ""}
-              placeholder="e.g. Basculegion"
-              className="mt-1 block rounded border border-line bg-card px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent"
+              placeholder="Has species, e.g. Basculegion"
+              className="block w-56 rounded border border-line bg-card px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent"
             />
-          </label>
-          <button type="submit" className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:text-ink">
-            Filter
-          </button>
-          {(species || chip) && (
-            <Link
-              href={formatId ? `/teams?format=${formatId}` : "/teams"}
-              className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:border-accent hover:text-accent"
-              title="Clear species, origin and page filters"
-            >
-              Reset
-            </Link>
-          )}
-        </form>
-        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+            <button type="submit" className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:text-ink">
+              Filter
+            </button>
+            {(species || chip) && (
+              <Link
+                href={formatId ? `/teams?format=${formatId}` : "/teams"}
+                className="rounded border border-line bg-card px-3 py-1.5 text-sm text-steel hover:border-accent hover:text-accent"
+                title="Clear species, origin and page filters"
+              >
+                Reset
+              </Link>
+            )}
+          </form>
+        </div>
+        {/* Row 2: chips and expand controls share one vertically-centered line. */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <OriginChips path="/teams" params={{ format: formatId, species }} current={chip} counts={chipCounts(allTeams)} />
           <ExpandAllTeams />
         </div>
