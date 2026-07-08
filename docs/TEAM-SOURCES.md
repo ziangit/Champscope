@@ -124,70 +124,14 @@ When facing an opponent on ladder, look up their previewed team in the DB
 - Still future: an optional Tampermonkey userscript that reads team preview from
   the battle DOM and opens `/match` prefilled; Showdex-fork overlay stays Phase 3.
 
-## Screenshot matching (IMPLEMENTED 2026-07-06 — EXPERIMENTAL, Showdown only)
+## Screenshot matching — REMOVED 2026-07-08
 
-> Status: shipped as an experimental pre-fill on /match (`lib/cv/`,
-> `POST /api/match/screenshot`, upload button). Precision-first calibration:
-> what it finds is usually right; crowded battle previews extract partially
-> and the user completes the rest in the editable input (the designed UX).
-> Scorecard + config in `test/fixtures/screenshots/MANIFEST.json`. Template
-> data (`data/cv/*.json`, ~7 MB numeric signatures) regenerates with
-> `npx tsx scripts/build-cv-templates.ts --cache <dir>` (sprites cache to
-> disk; only the first run fetches). Hard-won findings: Showdown battle
-> surfaces render `sprites/ani/` XY-style ANIMATED sprites (arbitrary frame
-> on screen; 3 frames/species as templates), forme filenames are hyphenated
-> (`spriteId()`), the player's side renders MIRRORED, preview sprites
-> overlap/occlude each other, and grid-signature affine matching — even
-> trimmed, scale-anchored, and margin-gated — cannot fully separate
-> overlap-degraded true matches from fragment/texture fits. The deferred
-> trained-model path (embedding gallery) is the durable fix for full recall.
-
-Third input adapter for /match: **digital screenshots only — photos are out of
-scope, and so is any LLM/API dependency.** Classical CV, ideally running
-client-side so images never reach the server (publicly shareable, zero cost,
-zero content risk). Species land in the existing editable input → `matchTeams`.
-
-Supported inputs and their recognizers:
-
-1. **Pokepaste / export text / species list** — already live.
-2. **Showdown screenshots** (preview strip, side panel, battle preview):
-   template matching against the known Showdown sprite sheets. Screenshots are
-   pixel-faithful, so this is deterministic — no training, no model.
-   *Asset-rule note:* sprite sheets are fetched at runtime and cached as
-   internal recognition templates, never bundled or served — a deliberate,
-   intent-preserving reading of the "no bundled Pokémon assets" rule.
-3. **Champions mobile/Switch team screens with text** (see the ja fixtures):
-   OCR on species names + a JA→EN species table; can also lift items/abilities
-   /moves. **Must be anchored to Champions UI layout** (team header, tab
-   labels, slot structure) — `negative-starter-illustration.png` proves that
-   "OCR found species words" alone is insufficient (artwork carries valid
-   names). The layout anchor is the reject gate.
-
-Explicitly unsupported (fall back to manual entry in the editable input):
-
-- **Photos of screens** — no special detection needed: the classical pipeline
-  fails naturally on photo distortion → "not recognized — upload a screenshot,
-  not a photo". (Solving photos would require an LLM vision call — cost/abuse
-  /account-risk on an open endpoint — or a self-trained model whose real cost
-  is a per-species Champions render gallery + photo-degradation synthetic
-  data. Both evaluated 2026-07-06 and deliberately deferred; revisit only if
-  screenshot-only proves too limiting.)
-- **Champions render-only previews** (doubles select strip, vertical battle
-  preview fixtures): no text, and template matching would need that same
-  render gallery.
-
-Shared rules regardless of recognizer:
-
-- Validated-species tiers: >=4 → match (partial tier handles 4–5-mon
-  screenshots natively); 1–3 → no auto-match, pre-fill and ask; 0 → "not
-  recognized". Every extracted name is validated via `toID` against known
-  species (lookalikes/fakemon fail here naturally).
-- All failures collapse to one user-facing message; the image is never
-  characterized, echoed, or persisted. Screenshots feed the query side only —
-  never the team DB.
-- Eval fixtures in `test/fixtures/screenshots/` (7 positives + 1 hard
-  negative; MANIFEST.json marks which are in scope for which recognizer).
-- **Eval fixtures live in `test/fixtures/screenshots/`** (7 real screenshots +
-  MANIFEST.json with ground truth where text names the mons and unverified
-  candidates for sprite-only ones). Manual eval script once the API key is
-  available; add non-Pokémon negatives before evaluating.
+Implemented 2026-07-06 (classical CV sprite recognition feeding /match),
+removed two days later at the owner's call: recognition was only reliable on
+side-panel screenshots, each request cost seconds of server CPU, and the
+paste/species input covers the need. The full implementation (lib/cv/,
+/api/match/screenshot, eval fixtures + scorecard) lives in git history if
+ever revisited; the durable findings are recorded above and the two small
+sprite-data files it spawned remain in use by the UI (icon-indexes.json for
+team-preview strips, sprite-ids.json for sprite fallback — regenerate with
+scripts/build-sprite-data.ts).

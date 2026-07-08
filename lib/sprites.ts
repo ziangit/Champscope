@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
-import gen5 from "@/data/cv/gen5.json";
+import spriteIds from "@/data/cv/sprite-ids.json";
 import iconIndexes from "@/data/cv/icon-indexes.json";
 import { BATTLE_FORME_SUFFIX } from "./scout/formes";
 import { toID } from "./showdown/id";
 
-/** Species ids that actually have a gen5 sprite on Showdown (derived from the
- * CV template inventory — same fetch source). Champions-exclusive formes
- * (Raichu-Mega-Y, Floette-Mega, …) are absent and fall back to base artwork. */
-const KNOWN_SPRITES = new Set((gen5 as { templates: { id: string }[] }).templates.map((t) => t.id));
+/** Species ids that actually have a gen5 sprite on Showdown (regenerate with
+ * scripts/build-sprite-data.ts). Champions-exclusive formes (Raichu-Mega-Y,
+ * Floette-Mega, …) are absent and fall back to base artwork. */
+const KNOWN_SPRITES = new Set(spriteIds as string[]);
 
 /**
  * Hotlinked Showdown sprite URLs (we bundle no Pokémon assets).

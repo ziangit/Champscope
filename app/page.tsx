@@ -14,7 +14,7 @@ const PAGES = [
   {
     href: "/match",
     title: "Match",
-    body: "Paste or screenshot an opponent's team preview and find it — exact rosters and 4+ overlaps, tournament teams first.",
+    body: "Paste an opponent's team preview and find it — exact rosters and 4+ overlaps, tournament teams first.",
   },
   {
     href: "/watch",
