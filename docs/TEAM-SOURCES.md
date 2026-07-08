@@ -91,6 +91,19 @@ Machine-readable mirror of RK9's officially published open team sheets, with res
   teammate co-occurrence graph, and "likely 4th move" hints.
 - One fetch per month per cutoff; cache in a `usage_stats` table.
 
+### 4b. MetaVGC featured events — community majors, full sets incl. EVs — IMPLEMENTED
+
+- `metavgc.com/teams/featured/<slug>` embeds the complete team list (player,
+  placement, sets with EV spreads) server-side in the Next.js flight payload —
+  `lib/sources/metavgc.ts` parses it; events are configured in
+  `METAVGC_EVENTS` (slug, formatId, event name, date). First ingested event:
+  The Champions Arena II (Victory Road, Reg M-B, 24 teams) — the first
+  `tournament`-origin teams in the current regulation. Species quirks handled:
+  "Charizard Mega Y" → hyphenated, "Basculegion-M" → male base.
+- Victory Road's own raw pastes (vrpastes.com, ~99 per event covering the
+  whole field) load client-side via an undiscovered API — MetaVGC's top cut
+  suffices for now; revisit if full-field coverage matters.
+
 ### 5. play.limitlesstcg.com — grassroots/online tournaments (later)
 
 - Documented public API (no key for most endpoints): https://docs.limitlesstcg.com/developer.html

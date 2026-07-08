@@ -2,6 +2,7 @@ import { db } from "../db";
 import { pokedataToReveals } from "../scout/import";
 import { toID } from "../showdown/id";
 import { POKEDATA_WINDOWS, VGCPASTES_SHEETS } from "./config";
+import { ingestMetavgcEvent, METAVGC_EVENTS, type MetavgcEvent } from "./metavgc";
 import { fetchMastersSheets, listPokedataTournaments, splitCountryTag, type PendingTournament } from "./pokedata";
 import { knownSourceKeys, storeImportedTeams, type ImportedTeam } from "./store";
 import { ingestVgcpastesEntry, listVgcpastesEntries, pasteKey, type VgcpastesEntry } from "./vgcpastes";
@@ -14,7 +15,7 @@ import { ingestVgcpastesEntry, listVgcpastesEntries, pasteKey, type VgcpastesEnt
  * re-running a pass is cheap and safe.
  */
 
-const SOURCES = ["vgcpastes", "pokedata"] as const;
+const SOURCES = ["vgcpastes", "pokedata", "metavgc"] as const;
 export type IngestSource = (typeof SOURCES)[number];
 
 /** Weekly schedule; 20 h still allows a manual next-day re-run. */
@@ -31,6 +32,8 @@ interface IngestCursor {
   tournaments?: PendingTournament[];
   tIndex?: number;
   playerOffset?: number;
+  /** metavgc: configured featured events left to fetch. */
+  events?: MetavgcEvent[];
   imported: number;
   merged: number;
   seen: number;
@@ -58,10 +61,12 @@ async function initCursor(source: IngestSource): Promise<IngestCursor> {
         else cursor.queue.push({ cfg: i, entry });
       }
     }
-  } else {
+  } else if (source === "pokedata") {
     cursor.tournaments = await listPokedataTournaments();
     cursor.tIndex = 0;
     cursor.playerOffset = 0;
+  } else {
+    cursor.events = [...METAVGC_EVENTS];
   }
   return cursor;
 }
@@ -92,7 +97,8 @@ export async function ingestTick(deadline: number, trigger: string): Promise<Ing
     if (last && Date.now() - new Date(last.started_at).getTime() < PASS_COOLDOWN_MS) continue;
 
     const cursor = await initCursor(source);
-    const formatId = source === "vgcpastes" ? VGCPASTES_SHEETS[0].formatId : POKEDATA_WINDOWS[0].formatId;
+    const formatId =
+      source === "vgcpastes" ? VGCPASTES_SHEETS[0].formatId : source === "pokedata" ? POKEDATA_WINDOWS[0].formatId : (METAVGC_EVENTS[0]?.formatId ?? VGCPASTES_SHEETS[0].formatId);
     const { data: run, error } = await db()
       .from("scout_runs")
       .insert({ format_id: formatId, trigger: `ingest:${source}:${trigger}`, cursor })
@@ -106,9 +112,15 @@ export async function ingestTick(deadline: number, trigger: string): Promise<Ing
 
 async function processChunk(runId: string, cursor: IngestCursor, deadline: number, started: boolean): Promise<IngestTickResult> {
   if (cursor.source === "vgcpastes") await vgcpastesChunk(cursor, deadline);
-  else await pokedataChunk(cursor, deadline);
+  else if (cursor.source === "pokedata") await pokedataChunk(cursor, deadline);
+  else await metavgcChunk(cursor, deadline);
 
-  const remaining = cursor.source === "vgcpastes" ? (cursor.queue?.length ?? 0) : (cursor.tournaments?.length ?? 0) - (cursor.tIndex ?? 0);
+  const remaining =
+    cursor.source === "vgcpastes"
+      ? (cursor.queue?.length ?? 0)
+      : cursor.source === "pokedata"
+        ? (cursor.tournaments?.length ?? 0) - (cursor.tIndex ?? 0)
+        : (cursor.events?.length ?? 0);
   const done = remaining === 0;
   const { error } = await db()
     .from("scout_runs")
@@ -142,6 +154,22 @@ async function vgcpastesChunk(cursor: IngestCursor, deadline: number) {
       cursor.errors.push({ source: "vgcpastes", item: entry.pasteUrl, message: err instanceof Error ? err.message : String(err) });
     }
     queue.shift();
+  }
+}
+
+async function metavgcChunk(cursor: IngestCursor, deadline: number) {
+  const events = cursor.events ?? [];
+  while (events.length > 0 && Date.now() < deadline) {
+    const ev = events[0];
+    try {
+      const stats = await ingestMetavgcEvent(ev);
+      cursor.imported += stats.imported;
+      cursor.merged += stats.merged;
+      cursor.seen += stats.seen;
+    } catch (err) {
+      cursor.errors.push({ source: "metavgc", item: ev.slug, message: err instanceof Error ? err.message : String(err) });
+    }
+    events.shift();
   }
 }
 
