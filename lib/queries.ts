@@ -56,21 +56,35 @@ export interface HomeStats {
   teams: number;
   replays: number;
   tournamentTeams: number;
+  /** finished_at of the most recent completed watch/ingest run, or null before any run. */
+  lastUpdated: string | null;
 }
 
-/** Headline counts for the landing page (three cheap head-count queries). */
+/** Headline counts + freshness for the landing page (four cheap queries). */
 export async function homeStats(): Promise<HomeStats> {
   const count = async (apply: (q: ReturnType<ReturnType<typeof db>["from"]>) => unknown) => {
     const q = db().from("team_profiles");
     const { count: n } = (await apply(q)) as { count: number | null };
     return n ?? 0;
   };
-  const [teams, tournamentTeams, replaysRes] = await Promise.all([
+  const [teams, tournamentTeams, replaysRes, lastRunRes] = await Promise.all([
     count((q) => q.select("id", { count: "exact", head: true })),
     count((q) => q.select("id", { count: "exact", head: true }).eq("origin", "tournament")),
     db().from("replays").select("id", { count: "exact", head: true }),
+    db()
+      .from("scout_runs")
+      .select("finished_at")
+      .not("finished_at", "is", null)
+      .order("finished_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
-  return { teams, replays: replaysRes.count ?? 0, tournamentTeams };
+  return {
+    teams,
+    replays: replaysRes.count ?? 0,
+    tournamentTeams,
+    lastUpdated: (lastRunRes.data as { finished_at: string } | null)?.finished_at ?? null,
+  };
 }
 
 /** Chip filter values as used by the /teams UI ("" = all). */

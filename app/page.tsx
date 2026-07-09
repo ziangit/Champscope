@@ -21,6 +21,15 @@ const SOURCES = [
 /** The current meta's poster mons, drawn from the official icon sheet. */
 const HERO_MONS = ["charizard", "garchomp", "sylveon", "kingambit", "incineroar", "whimsicott"];
 
+/** "just now" / "5 min ago" / "3 h ago" / "2 d ago" — rendered server-side, page is force-dynamic. */
+function agoLabel(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  if (mins < 48 * 60) return `${Math.floor(mins / 60)} h ago`;
+  return `${Math.floor(mins / (24 * 60))} d ago`;
+}
+
 export default async function Home() {
   const stats: HomeStats | null = dbConfigured() ? await homeStats().catch(() => null) : null;
 
@@ -40,18 +49,29 @@ export default async function Home() {
       </p>
 
       {stats && (
-        <div className="mt-6 flex flex-wrap gap-x-10 gap-y-2">
-          {[
-            [stats.teams, "teams on file"],
-            [stats.replays, "replays parsed"],
-            [stats.tournamentTeams, "tournament sheets"],
-          ].map(([n, label]) => (
-            <div key={label}>
-              <div className="font-display text-3xl font-bold tabular-nums">{Number(n).toLocaleString()}</div>
-              <div className="text-xs uppercase tracking-wide text-steel">{label}</div>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="mt-6 flex flex-wrap gap-x-10 gap-y-2">
+            {[
+              [stats.teams, "teams on file"],
+              [stats.replays, "replays parsed"],
+              [stats.tournamentTeams, "tournament sheets"],
+            ].map(([n, label]) => (
+              <div key={label}>
+                <div className="font-display text-3xl font-bold tabular-nums">{Number(n).toLocaleString()}</div>
+                <div className="text-xs uppercase tracking-wide text-steel">{label}</div>
+              </div>
+            ))}
+          </div>
+          {stats.lastUpdated && (
+            <p className="mt-2 text-xs text-steel">
+              Data updated{" "}
+              <time dateTime={stats.lastUpdated} title={stats.lastUpdated}>
+                {agoLabel(stats.lastUpdated)}
+              </time>{" "}
+              · refreshes daily
+            </p>
+          )}
+        </>
       )}
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
