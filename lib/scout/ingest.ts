@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { getReplay, searchReplaysAll } from "../showdown/api";
-import { toID } from "../showdown/id";
+import { baseReplayId, toID } from "../showdown/id";
 import type { ReplayJSON } from "../showdown/types";
 import { mergeGame, newTeamProfile } from "./merge";
 import { parseReplay } from "./parse";
@@ -91,7 +91,9 @@ async function mergeIntoProfiles(parsed: ParsedReplay, stats: ScoutStats) {
 
 /** Ingest a single replay by id (skips if already cached — replays are immutable). */
 export async function ingestReplay(replayId: string, stats: ScoutStats): Promise<void> {
-  const fresh = await unseenIds([replayId]);
+  // Rows are keyed by the base id (what the replay JSON reports), but the
+  // fetch needs the full pasted id — for private replays it carries the password.
+  const fresh = await unseenIds([baseReplayId(replayId)]);
   if (fresh.length === 0) return;
   const raw = await getReplay(replayId);
   const parsed = parseReplay(raw.log, raw);

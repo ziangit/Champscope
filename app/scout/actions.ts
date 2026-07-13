@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { ingestReplay, scoutUser, type ScoutStats } from "@/lib/scout/ingest";
-import { toID } from "@/lib/showdown/id";
+import { baseReplayId, toID } from "@/lib/showdown/id";
 
 const REPLAY_URL = /replay\.pokemonshowdown\.com\/([a-z0-9-]+)/g;
 
@@ -51,10 +51,12 @@ export async function runScout(formData: FormData): Promise<void> {
   }
 
   // Which of the given replays actually exist (post-ingest)? A URL that
-  // fetched nothing is a bad link, not a silent no-op.
+  // fetched nothing is a bad link, not a silent no-op. Stored ids are the
+  // base form — pasted private URLs carry a `-<password>pw` suffix.
+  const baseIds = replayIds.map(baseReplayId);
   let knownReplays: { p1_user_id: string; p2_user_id: string }[] = [];
   if (replayIds.length > 0) {
-    const { data } = await db().from("replays").select("p1_user_id, p2_user_id").in("id", replayIds);
+    const { data } = await db().from("replays").select("p1_user_id, p2_user_id").in("id", baseIds);
     knownReplays = data ?? [];
     if (knownReplays.length === 0) {
       await db().from("scout_runs").insert({
@@ -92,7 +94,7 @@ export async function runScout(formData: FormData): Promise<void> {
 
   if (mismatch) redirect("/scout?error=mismatch");
   // A replay's format is embedded in its id and may differ from the dropdown.
-  const resultFormat = !name && replayIds.length > 0 ? replayIds[0].replace(/-\d+$/, "") : formatId;
+  const resultFormat = !name && replayIds.length > 0 ? baseIds[0].replace(/-\d+$/, "") : formatId;
   if (name) {
     redirect(`/scout?scouted=${toID(name)}&format=${resultFormat}`);
   }
