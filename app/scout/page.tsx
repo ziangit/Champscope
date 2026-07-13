@@ -11,17 +11,27 @@ export const dynamic = "force-dynamic";
 export default async function ScoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; scouted?: string; format?: string; origin?: string }>;
+  searchParams: Promise<{ error?: string; scouted?: string; format?: string; origin?: string; replays?: string }>;
 }) {
-  const { error, scouted, format, origin } = await searchParams;
+  const { error, scouted, format, origin, replays } = await searchParams;
   if (!dbConfigured()) return <SetupNotice />;
   const formats = await listFormats();
   // Results render below the form — the form always stays on top. Multiple
   // subjects (several usernames and/or a replay's two players) each get a
-  // section; the chips filter across all of them.
+  // section; the chips filter across all of them. A replay-only scout carries
+  // the replay ids, narrowing each player to the teams seen in those games.
   const chip = chipValue(origin);
+  const replayIds = (replays ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const subjects = (scouted ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 12);
-  const bySubject = await Promise.all(subjects.map(async (u) => ({ userId: u, teams: await teamsForPlayer(u, format) })));
+  const bySubject = await Promise.all(
+    subjects.map(async (u) => {
+      let teams = await teamsForPlayer(u, format);
+      if (replayIds.length > 0) {
+        teams = teams.filter((t) => (t.merged_reveals.replays ?? []).some((r) => replayIds.includes(r.id)));
+      }
+      return { userId: u, teams };
+    }),
+  );
   const allTeams = bySubject.flatMap((s) => s.teams);
 
   return (
@@ -119,11 +129,11 @@ export default async function ScoutPage({
         <section className="mt-8 space-y-4">
           <p className="rounded border border-win/40 bg-win/5 px-3 py-2 text-sm text-win">
             Scout finished — {subjects.length} player{subjects.length === 1 ? "" : "s"}, {allTeams.length} team
-            {allTeams.length === 1 ? "" : "s"} on file.
+            {allTeams.length === 1 ? "" : "s"} {replayIds.length > 0 ? "in the given replay(s)" : "on file"}.
           </p>
           {allTeams.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <OriginChips path="/scout" params={{ scouted, format }} current={chip} counts={chipCounts(allTeams)} />
+              <OriginChips path="/scout" params={{ scouted, format, replays }} current={chip} counts={chipCounts(allTeams)} />
               <ExpandAllTeams />
             </div>
           )}

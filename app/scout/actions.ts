@@ -98,10 +98,13 @@ export async function runScout(formData: FormData): Promise<void> {
   if (name) {
     redirect(`/scout?scouted=${toID(name)}&format=${resultFormat}`);
   }
-  // Replay-only scout: show both players of the given replay(s).
+  // Replay-only scout: show both players of the given replay(s), narrowed to
+  // the teams that actually appear in them (not each player's full dossier).
   const subjects: string[] = [];
   for (const r of knownReplays) {
     for (const u of [r.p1_user_id, r.p2_user_id]) if (u && !subjects.includes(u)) subjects.push(u);
   }
-  redirect(`/scout?scouted=${subjects.slice(0, 8).join(",")}&format=${resultFormat}`);
+  redirect(
+    `/scout?scouted=${subjects.slice(0, 8).join(",")}&format=${resultFormat}&replays=${baseIds.join(",")}`,
+  );
 }
